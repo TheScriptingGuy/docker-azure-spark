@@ -181,7 +181,6 @@ ENV HADOOP_OPTS="-Djava.library.path=$HADOOP_PREFIX/lib/native"
 RUN echo 'export HADOOP_OPTIONAL_TOOLS=hadoop-azure,hadoop-azure-datalake' >> ~/.bashrc
 
 # configuration of supervisord
-ADD hadoop/conf/supervisor.conf /etc/supervisor/conf.d/supervisor.conf
 
 ADD bootstrap.sh /etc/bootstrap.sh
 RUN chown root:root /etc/bootstrap.sh && \
