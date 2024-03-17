@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+
+<configuration>
+    <property>
+        <name>yarn.nodemanager.aux-services</name>
+        <value>mapreduce_shuffle</value>
+    </property>
+    <property>
+        <name>yarn.resourcemanager.hostname</name>
+        <value>localhost</value>
+    </property>
+    <property>
+        <name>yarn.nodemanager.local-dirs</name>
+        <value>/data/yarn/nodemanager/data</value>
+    </property>
+    <property>
+        <name>yarn.nodemanager.log-dirs</name>
+        <value>/data/yarn/nodemanager/log</value>
+    </property>
+</configuration>

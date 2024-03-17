@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+
+<configuration>
+    <property>
+        <name>fs.defaultFS</name>
+        <value>hdfs://localhost:9000</value>
+    </property>
+    <property>
+        <name>fs.azure.blob.deletestrategy</name>
+        <value>Immediate</value>
+    </property>
+    <property>
+        <name>fs.azure.block.blob.with.compaction.dir</name>
+        <value>/hbase/WALs,/</value>
+    </property>
+    <property>
+        <name>fs.azure.enable.append.support</name>
+        <value>true</value>
+    </property>
+    <property>
+        <name>fs.azure.delete.threads</name>
+        <value>50</value>
+    </property>
+    <property>
+        <name>fs.azure.rename.threads</name>
+        <value>50</value>
+    </property>
+    <property>
+        <name>fs.azure.atomic.rename.dir</name>
+        <value>/hbase,/</value>
+    </property>
+</configuration>

@@ -1,0 +1,21 @@
+version: '3'
+
+services:
+  delta-spark:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        PYTHON_VERSION: ${PYTHON_VERSION}
+        SPARK_VERSION: ${SPARK_VERSION}
+        DELTA_VERSION: ${DELTA_VERSION}
+        HADOOP_VERSION: ${HADOOP_VERSION}
+        AZURE_STORAGE_ACCOUNTS: ${AZURE_STORAGE_ACCOUNTS}
+    user: root
+    env_file:
+      - .env
+    ports:
+      - "8080:8080" # Spark Master UI
+      - "7077:7077" # Spark Master
+    volumes:
+      - ..:/workspace:cached
