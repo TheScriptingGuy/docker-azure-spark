@@ -61,6 +61,12 @@ Ensure the following extensions are installed in vscode:
 
 Ensure the following software is installed on your pc:
 - Docker
+- Alternative: Rancher Desktop
+  - Download Rancher Desktop
+  - Choose dockerd (moby) as Container Engine
+  - Install WSL if prompted
+  - Don't use kubernetes (not required)
+  - Reboot your computer when installed
 
 Copy the ENVTEMPLATE file and create a new .env file. Configure your Azure storage account in the JSON array and ensure to escape " to ensure it can be processed successfully. If have your own Azure Storage Account, ensure that you have a Private Connection or make sure the storage account can be accessed from your ip on the internet. Also get the storage account key from the Azure Portal by going to the Storage Account and going to the Access Keys tab.
 

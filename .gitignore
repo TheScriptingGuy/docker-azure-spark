@@ -1,0 +1,4 @@
+PythonCustomModule/services/__pycache__/
+PythonCustomModule/__pycache__/
+tests/bdd/utils/__pycache__/
+.devcontainer/docker/.env

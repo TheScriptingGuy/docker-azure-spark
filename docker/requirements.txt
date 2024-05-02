@@ -1,3 +1,0 @@
-jupyter
-py4j
-findspark

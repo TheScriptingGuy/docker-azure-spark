@@ -18,4 +18,4 @@ services:
       - "8080:8080" # Spark Master UI
       - "7077:7077" # Spark Master
     volumes:
-      - ..:/workspace:cached
+      - ../..:/workspace:cached
