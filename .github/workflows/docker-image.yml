@@ -27,3 +27,8 @@ jobs:
         context: .devcontainer/docker
         push: true
         tags: portablespark/docker-azure-spark:tag
+        build-args: |
+          PYTHON_VERSION=3.10
+          SPARK_VERSION=3.3.4
+          DELTA_VERSION=2.2.0 
+          HADOOP_VERSION=3.3.4
