@@ -1,0 +1,12 @@
+jupyter
+py4j
+findspark
+pyspark==3.3.4
+delta-spark==2.3.0
+behave
+allure-behave
+spylon-kernel
+pyarrow
+notebook==6.5.6
+jupyter_contrib_nbextensions
+sparkmagic

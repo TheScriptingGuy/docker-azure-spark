@@ -1,7 +1,0 @@
-jupyter
-py4j
-findspark
-pyspark==3.3.4
-delta-spark==2.3.0
-behave
-allure-behave

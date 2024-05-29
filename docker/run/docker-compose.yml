@@ -1,0 +1,18 @@
+version: '3'
+
+services:
+  delta-spark:
+    image: portablespark/docker-azure-spark:latest
+    user: root
+    env_file:
+      - .env
+    entrypoint: ["/bin/bash", "./bootstrap.sh"]
+    ports:
+      - "8080:8080" # Spark Master UI
+      - "7077:7077" # Spark Master
+      - "8081:8081" # Spark Worker UI
+      - "9083:9083" # Hive
+      - "5432:5432" # Postgres
+    volumes:
+      - ../..:/workspace:cached
+      - ./bootstrap.sh:/bootstrap.sh

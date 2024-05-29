@@ -10,12 +10,14 @@ services:
         SPARK_VERSION: ${SPARK_VERSION}
         DELTA_VERSION: ${DELTA_VERSION}
         HADOOP_VERSION: ${HADOOP_VERSION}
-        AZURE_STORAGE_ACCOUNTS: ${AZURE_STORAGE_ACCOUNTS}
     user: root
     env_file:
       - .env
     ports:
       - "8080:8080" # Spark Master UI
       - "7077:7077" # Spark Master
+      - "8081:8081" # Spark Worker UI
+      - "9083:9083" # Hive
+      - "5432:5432" # Postgres
     volumes:
       - ../..:/workspace:cached

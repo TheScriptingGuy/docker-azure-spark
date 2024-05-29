@@ -12,6 +12,11 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v2
 
+    - name: Extract tag name
+      id: extract_tag
+      run: echo "::set-output name=tag::${GITHUB_REF#refs/tags/}"
+
+
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v1
 
@@ -26,9 +31,9 @@ jobs:
       with:
         context: .devcontainer/docker
         push: true
-        tags: portablespark/docker-azure-spark:tag
+        tags: portablespark/docker-azure-spark:${{ steps.extract_tag.outputs.tag }}
         build-args: |
-          PYTHON_VERSION=3.10
-          SPARK_VERSION=3.3.4
-          DELTA_VERSION=2.2.0 
-          HADOOP_VERSION=3.3.4
+          PYTHON_VERSION=${{ env.PYTHON_VERSION }}
+          SPARK_VERSION=${{ env.SPARK_VERSION }}
+          DELTA_VERSION=${{ env.DELTA_VERSION }} 
+          HADOOP_VERSION=${{ env.HADOOP_VERSION }}

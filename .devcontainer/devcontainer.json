@@ -2,10 +2,9 @@
 // README at: https://github.com/devcontainers/templates/tree/main/src/python
 {
   "name": "Python with Pyspark and Delta Lake",
-  "dockerComposeFile": "docker/docker-compose.yml",
+  "dockerComposeFile": "../docker/build/docker-compose.yml",
   "service": "delta-spark",
   "workspaceFolder": "/workspace",
-  
   // Configure tool-specific properties.
   "customizations": {
     "vscode": {
@@ -33,16 +32,23 @@
             "icon": "terminal-bash"
           }
         },
-        "black-formatter.path": ["/usr/local/bin/black"],
-        "sonarlint.pathToNodeExecutable": "/root/.nvm",
-        "python.pythonPath": "/usr/local/bin/python",
+        "black-formatter.path": [
+          "/usr/local/bin/black"
+        ],
+        "sonarlint.pathToNodeExecutable": "/root/.nvm/versions/node/v21.0.0/bin/node",
+        "jupyter.kernels.trusted": [
+          "/usr/local/share/jupyter/kernels/pysparkkernel/kernel.json",
+          "/usr/local/share/jupyter/kernels/sparkkernel/kernel.json"
+        ],
         "python.languageServer": "Default",
         "python.formatting.provider": "black",
         "python.formatting.blackPath": "/usr/local/bin/black",
         "python.linting.pylintPath": "/usr/local/bin/pylint",
         "python.testing.pytestPath": "/usr/local/bin/pytest",
         "python.analysis.typeCheckingMode": "basic",
-        "python.testing.pytestArgs": ["tests -v"],
+        "python.testing.pytestArgs": [
+          "tests -v"
+        ],
         "python.testing.unittestEnabled": false,
         "python.testing.pytestEnabled": true,
         "[python]": {
@@ -53,7 +59,6 @@
       }
     }
   }
-
   // Uncomment to connect as root instead. More info: https://aka.ms/dev-containers-non-root.
   // "remoteUser": "root"
 }

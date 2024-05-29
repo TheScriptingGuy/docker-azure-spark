@@ -5,18 +5,9 @@ ARG PYTHON_VERSION
 ARG SPARK_VERSION
 ARG DELTA_VERSION
 ARG HADOOP_VERSION
-ARG AZURE_STORAGE_ACCOUNTS
 
-# HARDCODED VERSIONS
-# ENV SPARK_VERSION=3.3.4 \
-# HADOOP_VERSION=3 \
-# JAVA_VERSION=11 \
-#HADOOP_VERSION=3.3.4
-
-COPY --from=eclipse-temurin:11-jre $JAVA_HOME $JAVA_HOME
+COPY --from=eclipse-temurin:8-jre $JAVA_HOME $JAVA_HOME
 ENV PATH="${JAVA_HOME}/bin:${PATH}"
-
-RUN java --version
 
 RUN apt-get -y update
 RUN apt-get -y upgrade
@@ -58,11 +49,15 @@ ENV SPARK_CLASSPATH="$SPARK_CLASSPATH:$SPARK_EXTRA_CLASSPATH:$HADOOP_PREFIX/etc/
 RUN cp -p "${SPARK_HOME}/conf/spark-defaults.conf.template" "${SPARK_HOME}/conf/spark-defaults.conf" && \
     echo 'spark.driver.extraJavaOptions -Dio.netty.tryReflectionSetAccessible=true' >> "${SPARK_HOME}/conf/spark-defaults.conf" && \
     echo 'spark.executor.extraJavaOptions -Dio.netty.tryReflectionSetAccessible=true' >> "${SPARK_HOME}/conf/spark-defaults.conf" && \
-    echo "spark.jars.packages org.apache.hadoop:hadoop-azure-datalake:3.0.0-alpha1,com.microsoft.azure:azure-storage:8.6.3,io.delta:delta-core_2.12:$DELTA_VERSION,org.apache.hadoop:hadoop-azure:${HADOOP_VERSION},com.azure:azure-storage-blob:12.25.2" >> "${SPARK_HOME}/conf/spark-defaults.conf" && \
+    echo "spark.jars.packages org.apache.spark:spark-hive_2.12:3.1.2,org.apache.hadoop:hadoop-azure-datalake:3.0.0-alpha1,com.microsoft.azure:azure-storage:8.6.3,io.delta:delta-core_2.12:$DELTA_VERSION,org.apache.hadoop:hadoop-azure:${HADOOP_VERSION},com.azure:azure-storage-blob:12.25.2" >> "${SPARK_HOME}/conf/spark-defaults.conf" && \
     echo 'spark.serializer org.apache.spark.serializer.KryoSerializer' >> "${SPARK_HOME}/conf/spark-defaults.conf" && \
     echo 'spark.sql.catalog.spark_catalog org.apache.spark.sql.delta.catalog.DeltaCatalog'  >> "${SPARK_HOME}/conf/spark-defaults.conf" && \
     echo 'spark.sql.extensions io.delta.sql.DeltaSparkSessionExtension' >> "${SPARK_HOME}/conf/spark-defaults.conf" &&\
-    echo "spark.jars.ivy ${SPARK_HOME}/tmp/ivy2" >> "${SPARK_HOME}/conf/spark-defaults.conf"
+    echo "spark.jars.ivy ${SPARK_HOME}/tmp/ivy2" >> "${SPARK_HOME}/conf/spark-defaults.conf" &&\
+    echo "spark.sql.warehouse.dir /user/hive/warehouse" >> "${SPARK_HOME}/conf/spark-defaults.conf" &&\
+    echo "spark.sql.catalogImplementation hive" >> "${SPARK_HOME}/conf/spark-defaults.conf" &&\
+    echo "spark.sql.execution.arrow.pyspark.enabled true" >> "${SPARK_HOME}/conf/spark-defaults.conf"
+
 
 #############################################
 # install HADOOP
@@ -169,13 +164,13 @@ RUN node --version
 RUN npm --version
 # Change the owner of the /root/.nvm directory to $UNAME
 RUN chown -R root:root /root/.nvm
-ENV PATH=$PATH:$HADOOP_PREFIX/bin:$SPARK_HOME/bin:$HIVE_HOME/bin:$ZEPPELIN_HOME/bin
+
 ###########################################
 # Finalize
 ###########################################
 # Set environment variables for new bash sessions, when starting Hadoop and Spark
 RUN echo 'export JAVA_HOME=/opt/java/openjdk' >> ~/.bashrc
-RUN echo 'export PATH=$PATH:$HADOOP_PREFIX/bin:$SPARK_HOME/bin:$HIVE_HOME/bin:$ZEPPELIN_HOME/bin' >> ~/.bashrc
+
 RUN echo 'export HADOOP_OPTS="-Djava.library.path=$HADOOP_PREFIX/lib/native"' >> ~/.bashrc
 ENV HADOOP_OPTS="-Djava.library.path=$HADOOP_PREFIX/lib/native"
 RUN echo 'export HADOOP_OPTIONAL_TOOLS=hadoop-azure,hadoop-azure-datalake' >> ~/.bashrc
@@ -219,37 +214,111 @@ EXPOSE 7077 8080 65000 65001 65002 8085 8086 8087 18080
 # Install pyspark and delta-spark using pip
 RUN pip install --no-cache-dir pyspark==${SPARK_VERSION} delta-spark==$DELTA_VERSION ipykernel
 
-RUN python -c "from pyspark.sql import SparkSession; spark = SparkSession.builder.getOrCreate(); spark.stop()"
+RUN python -c "from pyspark.sql import SparkSession; spark = SparkSession.builder.getOrCreate(); spark.stop()"  && python -m spylon_kernel install
 
-RUN apt-get -y install xmlstarlet jq
+RUN mkdir /home/root/
+RUN mkdir /home/root/.sparkmagic
+COPY sparkmagic/example_config.json /home/root/.sparkmagic/config.json
+RUN sed -i 's/localhost/spark/g' /home/root/.sparkmagic/config.json
+RUN jupyter nbextension enable --py --sys-prefix widgetsnbextension
+RUN jupyter-kernelspec install --user $(pip show sparkmagic | grep Location | cut -d" " -f2)/sparkmagic/kernels/sparkkernel
+RUN jupyter-kernelspec install --user $(pip show sparkmagic | grep Location | cut -d" " -f2)/sparkmagic/kernels/pysparkkernel
+RUN jupyter-kernelspec install --user $(pip show sparkmagic | grep Location | cut -d" " -f2)/sparkmagic/kernels/sparkrkernel
+RUN jupyter serverextension enable --py sparkmagic
 
-#loop through Azure Storage Accounts JSON Array and add the values in the HADOOP Config files
-RUN echo $AZURE_STORAGE_ACCOUNTS | jq -c '.[]' | while read i; do \
-        AZURE_STORAGE_ACCOUNT_NAME=$(echo $i | jq -r '.StorageAccountName') && \
-        AZURE_STORAGE_ACCOUNT_KEY=$(echo $i | jq -r '.StorageAccountKey') && \
-        echo "Processing $AZURE_STORAGE_ACCOUNT_NAME with key $AZURE_STORAGE_ACCOUNT_KEY" && \
-        xmlstarlet ed --inplace \
-        --subnode "/configuration" --type elem -n propertyTMP \
-        --subnode "//propertyTMP" --type elem -n name -v "fs.azure.account.key.${AZURE_STORAGE_ACCOUNT_NAME}.blob.core.windows.net" \
-        --subnode "//propertyTMP" --type elem -n value -v "${AZURE_STORAGE_ACCOUNT_KEY}" \
-        --rename "//propertyTMP" -v "property" \
-        $HADOOP_HOME/etc/hadoop/core-site.xml && \
-        xmlstarlet ed --inplace \
-        --subnode "/configuration" --type elem -n propertyTMP \
-        --subnode "//propertyTMP" --type elem -n name -v "fs.azure.account.key.${AZURE_STORAGE_ACCOUNT_NAME}.dfs.core.windows.net" \
-        --subnode "//propertyTMP" --type elem -n value -v "${AZURE_STORAGE_ACCOUNT_KEY}" \
-        --rename "//propertyTMP" -v "property" \
-        $HADOOP_HOME/etc/hadoop/core-site.xml && \
-        xmlstarlet ed --inplace \
-        --subnode "/configuration" --type elem -n propertyTMP \
-        --subnode "//propertyTMP" --type elem -n name -v "fs.azure.account.auth.type.${AZURE_STORAGE_ACCOUNT_NAME}.dfs.core.windows.net" \
-        --subnode "//propertyTMP" --type elem -n value -v "SharedKey" \
-        --rename "//propertyTMP" -v "property" \
-        $HADOOP_HOME/etc/hadoop/core-site.xml; \
-    done
+ARG LIVY_VERSION=0.8.0-incubating
+ENV LIVY_HOME /usr/livy
+ENV LIVY_CONF_DIR "${LIVY_HOME}/conf"
+ENV LIVY_PORT 8998
+
+ARG HIVE_VERSION=3.1.2
+ARG HIVE_URL=https://archive.apache.org/dist/hive/hive-$HIVE_VERSION/apache-hive-$HIVE_VERSION-bin.tar.gz
+ENV HIVE_HOME=/opt/hive
+
+RUN set -x \
+ && curl -fsSL https://archive.apache.org/dist/hive/KEYS -o /tmp/hive-KEYS  \
+ && gpg --import /tmp/hive-KEYS \
+ && mkdir $HIVE_HOME \
+ && curl -fsSL $HIVE_URL -o /tmp/hive.tar.gz \
+ && curl -fsSL $HIVE_URL.asc -o /tmp/hive.tar.gz.asc \
+ && gpg --verify /tmp/hive.tar.gz.asc \
+ && tar -xf /tmp/hive.tar.gz -C $HIVE_HOME --strip-components 1 \
+ && rm /tmp/hive*
+
+ENV HIVE_CONF_DIR=$HIVE_HOME/conf
+ENV PATH=$HIVE_HOME/sbin:$HIVE_HOME/bin:$PATH
+COPY hive/conf/hive-site.xml $HIVE_CONF_DIR/
+
+ENV SPARK_CLASSPATH="$SPARK_CLASSPATH:$HIVE_HOME/lib/"
+
+###########################################
+# Install Apache Livy
+###########################################
+
+RUN curl --progress-bar -L --retry 3 \
+    "https://archive.apache.org/dist/incubator/livy/${LIVY_VERSION}/apache-livy-${LIVY_VERSION}_2.12-bin.zip" \
+    -o "./apache-livy-${LIVY_VERSION}_2.12-bin.zip" \
+  && ls . \
+  && unzip -qq "./apache-livy-${LIVY_VERSION}_2.12-bin.zip" -d /usr \
+  && mv "/usr/apache-livy-${LIVY_VERSION}_2.12-bin" "${LIVY_HOME}" \
+  && rm -rf "./apache-livy-${LIVY_VERSION}_2.12-bin.zip" \
+  && mkdir "${LIVY_HOME}/logs" \
+  && chown -R root:root "${LIVY_HOME}"
+
+EXPOSE 8998
+
+HEALTHCHECK CMD curl -f "http://host.docker.internal:${LIVY_PORT}/" || exit 1
+
+ENV SPARK_PUBLIC_DNS=localhost
+
+RUN apt-get -y install xmlstarlet jq postgresql postgresql-contrib
 
 
+RUN mkdir /home/postgres
+RUN mkdir /home/postgres/data
 
+RUN chown -R postgres:postgres /home/postgres
+
+USER postgres
+
+COPY hive/postgres/init.sql /home/postgres/init.sql
+
+RUN /usr/lib/postgresql/15/bin/initdb -D /home/postgres/data
+
+#RUN echo "include_if_exists = '/home/postgres/init.sql'" >> /home/postgres/data/postgresql.conf
+
+EXPOSE 5432
+
+USER root
+# ENV ZEPPELIN_HOME=/usr/local/zeppelin
+# ENV ZEPPELIN_VERSION=0.11.0
+# ENV ZEPPELIN_PORT=8082
+# ENV ZEPPELIN_ADDR=localhost
+# RUN wget https://downloads.apache.org/zeppelin/zeppelin-$ZEPPELIN_VERSION/zeppelin-$ZEPPELIN_VERSION-bin-all.tgz
+# RUN tar -xzvf zeppelin-$ZEPPELIN_VERSION-bin-all.tgz
+# RUN mv zeppelin-$ZEPPELIN_VERSION-bin-all $ZEPPELIN_HOME
+#COPY zeppelin/conf/zeppelin-site.xml $ZEPPELIN_HOME/conf/zeppelin-site.xml
+ENV PATH=$PATH:$HADOOP_PREFIX/bin:$SPARK_HOME/bin:$HIVE_HOME/bin:$ZEPPELIN_HOME/bin
+RUN echo 'export PATH=$PATH:$HADOOP_PREFIX/bin:$SPARK_HOME/bin:$HIVE_HOME/bin:$ZEPPELIN_HOME/bin' >> ~/.bashrc
+# ENV ZEPPELIN_ADDR=0.0.0.0
+# ENV ZEPPELIN_PORT=8082
+ENV HADOOP_CLASSPATH="$HADOOP_CLASSPATH:$HIVE_HOME/lib/*"
+
+ENV SPARK_CLASSPATH="$SPARK_CLASSPATH:$HADOOP_CLASSPATH"
 ADD bootstrap.sh /etc/bootstrap.sh
+COPY livy/conf/livy.conf /usr/livy/conf/livy.conf
+COPY hive/conf/hive-site.xml $SPARK_HOME/conf/hive-site.xml
+RUN wget https://jdbc.postgresql.org/download/postgresql-42.2.5.jar -O postgresql-42.2.5.jar
+RUN cp ./postgresql-42.2.5.jar $HIVE_HOME/lib/
+RUN cp ./postgresql-42.2.5.jar $SPARK_HOME/jars/
+ENV CLASSPATH=$CLASSPATH:$HIVE_HOME/lib/postgresql-42.2.5.jar
+RUN echo 'export SPARK_DIST_CLASSPATH="$($HADOOP_HOME/bin/hadoop classpath:${SPARK_HOME}/tmp/ivy2:$HIVE_HOME/lib classpath)"' >> /etc/environment
+
+RUN for f in ${SPARK_HOME}/jars/*.jar; do \
+        CLASSPATH=${CLASSPATH}:$f; \
+    done
+RUN for f in ${SPARK_HOME}/tmp/ivy2/jars/*.jar; do \
+        CLASSPATH=${CLASSPATH}:$f; \
+    done
 
 CMD ["bash","/etc/bootstrap.sh"]
