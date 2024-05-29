@@ -12,10 +12,13 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v2
 
-    - name: Extract tag name
-      id: extract_tag
-      run: echo "::set-output name=tag::${GITHUB_REF#refs/tags/}"
+    - name: Extract Tag
+      run:  |
+            BRANCH_NAME=$(git rev-parse --abbrev-ref HEAD)
 
+            # Replace slashes with dashes
+            TAG=$(echo $BRANCH_NAME | tr '/' '-')
+      shell: bash
 
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v1
