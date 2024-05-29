@@ -27,7 +27,7 @@ jobs:
     - name: Build and push
       uses: docker/build-push-action@v2
       with:
-        context: .devcontainer/docker
+        context: docker/build
         push: true
         tags: portablespark/docker-azure-spark:${{ github.ref_name }}
         build-args: |
