@@ -31,7 +31,7 @@ jobs:
         push: true
         tags: portablespark/docker-azure-spark:${{ github.ref_name }}
         build-args: |
-          PYTHON_VERSION=${{ env.PYTHON_VERSION }}
-          SPARK_VERSION=${{ env.SPARK_VERSION }}
-          DELTA_VERSION=${{ env.DELTA_VERSION }} 
-          HADOOP_VERSION=${{ env.HADOOP_VERSION }}
+          PYTHON_VERSION=${{ vars.PYTHON_VERSION }}
+          SPARK_VERSION=${{ vars.SPARK_VERSION }}
+          DELTA_VERSION=${{ vars.DELTA_VERSION }} 
+          HADOOP_VERSION=${{ vars.HADOOP_VERSION }}
