@@ -29,7 +29,7 @@ jobs:
       with:
         context: .devcontainer/docker
         push: true
-        tags: portablespark/docker-azure-spark:${{ steps.extract_tag.outputs.tag }}
+        tags: portablespark/docker-azure-spark:${{ github.ref_name }}
         build-args: |
           PYTHON_VERSION=${{ env.PYTHON_VERSION }}
           SPARK_VERSION=${{ env.SPARK_VERSION }}
