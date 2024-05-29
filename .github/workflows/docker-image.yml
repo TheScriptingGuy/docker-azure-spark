@@ -15,11 +15,8 @@ jobs:
     - uses: little-core-labs/get-git-tag@v3.0.1
       id: tagName
       with:
-        tagRegex: "foobar-(.*)"  # Optional. Returns specified group text as tag name. Full tag string is returned if regex is not defined.
+        tagRegex: "*"  # Optional. Returns specified group text as tag name. Full tag string is returned if regex is not defined.
         tagRegexGroup: 1 # Optional. Default is 1.
-    - name: Some other step # Output usage example
-      with:
-        tagname: ${{ steps.tagName.outputs.tag }}
 
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v1
@@ -35,7 +32,7 @@ jobs:
       with:
         context: .devcontainer/docker
         push: true
-        tags: portablespark/docker-azure-spark:$GIT_TAG_NAME
+        tags: portablespark/docker-azure-spark:${{ steps.extract_tag.outputs.tag }}
         build-args: |
           PYTHON_VERSION=${{ env.PYTHON_VERSION }}
           SPARK_VERSION=${{ env.SPARK_VERSION }}
