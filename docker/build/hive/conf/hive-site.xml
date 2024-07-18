@@ -35,6 +35,16 @@
         <value>jdbc:derby:;databaseName=metastore_db;create=true</value>
     </property>
     <property>
+        <name>datanucleus.autoCreateSchema</name>
+        <value>true</value>
+        <description>Automatically creates necessary schema on startup if it doesn't exist</description>
+    </property>
+    <property>
+        <name>datanucleus.autoCreateTables</name>
+        <value>true</value>
+        <description>Automatically creates necessary schema on startup if it doesn't exist</description>
+    </property>
+    <property>
         <name>javax.jdo.option.ConnectionUserName</name>
         <value>APP</value>
     </property>
