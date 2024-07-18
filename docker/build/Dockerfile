@@ -200,32 +200,6 @@ ENV HADOOP_CLASSPATH="$HADOOP_CLASSPATH:$HIVE_HOME/lib/*"
 ENV SPARK_CLASSPATH="$SPARK_CLASSPATH:$HADOOP_CLASSPATH"
 
 ###########################################
-# Install Python & Spark dependencies
-###########################################
-
-# Install pyspark and delta-spark using pip
-RUN pip install --no-cache-dir pyspark==${SPARK_VERSION} delta-spark==$DELTA_VERSION ipykernel
-
-#Install Spark dependencies by running Spark once
-RUN python -c "from pyspark.sql import SparkSession; spark = SparkSession.builder.getOrCreate(); spark.stop()"  && python -m spylon_kernel install
-
-#ADD Spark IVY jars to the CLASSPATH
-RUN for f in ${SPARK_HOME}/tmp/ivy2/jars/*.jar; do \
-        CLASSPATH=${CLASSPATH}:$f; \
-    done
-
-# Setup directories, configure Sparkmagic, and install Jupyter kernels in a single RUN to reduce layers
-RUN mkdir -p /home/root/.sparkmagic && \
-    cp sparkmagic/example_config.json /home/root/.sparkmagic/config.json && \
-    sed -i 's/localhost/spark/g' /home/root/.sparkmagic/config.json && \
-    jupyter nbextension enable --py --sys-prefix widgetsnbextension && \
-    KERNELS_LOCATION=$(pip show sparkmagic | grep Location | cut -d" " -f2)/sparkmagic/kernels && \
-    jupyter-kernelspec install --user ${KERNELS_LOCATION}/sparkkernel && \
-    jupyter-kernelspec install --user ${KERNELS_LOCATION}/pysparkkernel && \
-    jupyter-kernelspec install --user ${KERNELS_LOCATION}/sparkrkernel && \
-    jupyter serverextension enable --py sparkmagic
-
-###########################################
 # Install Derby
 ###########################################
 
@@ -260,6 +234,34 @@ RUN curl --progress-bar -L --retry 3 \
 COPY livy/conf/livy.conf /usr/livy/conf/livy.conf
 
 HEALTHCHECK CMD curl -f "http://host.docker.internal:${LIVY_PORT}/" || exit 1
+
+###########################################
+# Install Python & Spark dependencies
+###########################################
+
+# Install pyspark and delta-spark using pip
+RUN pip install --no-cache-dir pyspark==${SPARK_VERSION} delta-spark==$DELTA_VERSION ipykernel
+
+#Install Spark dependencies by running Spark once
+RUN python -c "from pyspark.sql import SparkSession; spark = SparkSession.builder.getOrCreate(); spark.stop()"  && python -m spylon_kernel install
+
+#ADD Spark IVY jars to the CLASSPATH
+RUN for f in ${SPARK_HOME}/tmp/ivy2/jars/*.jar; do \
+        CLASSPATH=${CLASSPATH}:$f; \
+    done
+
+COPY sparkmagic/example_config.json /home/root/.sparkmagic/config.json
+
+# Setup directories, configure Sparkmagic, and install Jupyter kernels in a single RUN to reduce layers
+RUN mkdir -p /home/root/.sparkmagic && \
+    cp sparkmagic/example_config.json /home/root/.sparkmagic/config.json && \
+    sed -i 's/localhost/spark/g' /home/root/.sparkmagic/config.json && \
+    jupyter nbextension enable --py --sys-prefix widgetsnbextension && \
+    KERNELS_LOCATION=$(pip show sparkmagic | grep Location | cut -d" " -f2)/sparkmagic/kernels && \
+    jupyter-kernelspec install --user ${KERNELS_LOCATION}/sparkkernel && \
+    jupyter-kernelspec install --user ${KERNELS_LOCATION}/pysparkkernel && \
+    jupyter-kernelspec install --user ${KERNELS_LOCATION}/sparkrkernel && \
+    jupyter serverextension enable --py sparkmagic
 
 ###########################################
 # Finalize
