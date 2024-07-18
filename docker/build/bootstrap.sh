@@ -51,8 +51,6 @@ export YARN_CONF_DIR=$HADOOP_PREFIX/etc
 mkdir -p /tmp/spark/data
 mkdir -p /tmp/hadoop/hdfs/tmp
 
-
-
 if [ ! -f "$NAMEDIR"/initialized ]; then
   echo "Configuring Hive..."
   hdfs dfs -mkdir -p  /user/hive/warehouse
@@ -74,6 +72,5 @@ $LIVY_HOME/bin/livy-server &
 bash $HADOOP_PREFIX/sbin/start-all.sh  &
 
 bash $SPARK_HOME/sbin/start-all.sh  &
-
 
 sleep infinity
