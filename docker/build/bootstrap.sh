@@ -64,6 +64,7 @@ hive --service metastore > /home/root/hive-metastore.log 2>&1 &
 echo "Starting Hive server2..."
 hiveserver2 > /home/root/hive-server.log 2>&1 &
 # Start Jupyter Notebook without a password
+
 bash jupyter notebook --allow-root --NotebookApp.allow_origin='*' --NotebookApp.password='' --NotebookApp.token='' &
 $LIVY_HOME/bin/livy-server &
 # start ssh
