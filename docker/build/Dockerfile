@@ -308,7 +308,4 @@ RUN for f in ${SPARK_HOME}/tmp/ivy2/jars/*.jar; do \
         CLASSPATH=${CLASSPATH}:$f; \
     done
 
-RUN chown -R vsts_azpcontainer /home/spark/tmp/ivy2/cache && \
-    chmod -R u+rw /home/spark/tmp/ivy2/cache
-
 CMD ["bash","/etc/bootstrap.sh"]
