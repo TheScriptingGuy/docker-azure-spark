@@ -13,6 +13,7 @@ services:
         HIVE_VERSION: ${HIVE_VERSION}
         LIVY_VERSION: ${LIVY_VERSION}
         DERBY_VERSION: ${DERBY_VERSION}
+        JAVA_VERSION: ${JAVA_VERSION}
     user: root
     env_file:
       - .env

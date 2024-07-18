@@ -1,7 +1,7 @@
 jupyter
 py4j==0.10.9.7
 findspark
-pyspark==3.5.0
+pyspark==3.4.3
 delta-spark==2.4.0
 behave
 allure-behave

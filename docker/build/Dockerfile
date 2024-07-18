@@ -1,11 +1,17 @@
-FROM python:3.10
+ARG PYTHON_VERSION
+ARG JAVA_VERSION
+FROM eclipse-temurin:${JAVA_VERSION}-jre as java-jre
+ARG PYTHON_VERSION
+ARG JAVA_VERSION
+FROM python:${PYTHON_VERSION}-slim AS base
+
+ARG JAVA_VERSION
 
 # Set environment variables
 ENV JAVA_HOME=/opt/java/openjdk \
     PATH="${JAVA_HOME}/bin:${PATH}" \
     PIPENV_VENV_IN_PROJECT=1
 
-ARG PYTHON_VERSION
 ARG SPARK_VERSION
 ARG DELTA_VERSION
 ARG HADOOP_VERSION
@@ -13,9 +19,11 @@ ARG HIVE_VERSION
 ARG LIVY_VERSION
 ARG DERBY_VERSION
 
-COPY --from=eclipse-temurin:8-jre $JAVA_HOME $JAVA_HOME
+# Copy the Java Runtime Environment (JRE) from the eclipse-temurin image
+COPY --from=java-jre $JAVA_HOME $JAVA_HOME
+
 # Install dependencies and cleanup in a single layer
-RUN apt-get update && apt-get -y upgrade && apt-get -y install tree \
+RUN apt-get update && apt-get -y upgrade && apt-get -y install tree sudo libkrb5-dev build-essential \
     && python -m pip install --upgrade pip \
     && pip install --no-cache-dir pipenv \
     && rm -rf /var/lib/apt/lists/*
@@ -23,11 +31,6 @@ RUN apt-get update && apt-get -y upgrade && apt-get -y install tree \
 # Handle Python dependencies
 ADD requirements.txt /tmp/
 RUN pip install -r /tmp/requirements.txt && rm /tmp/requirements.txt
-
-# Combine apt-get update, installations, and cleanup into a single RUN to reduce layers
-RUN apt-get update && apt-get install -y \
-    sudo \
-    && rm -rf /var/lib/apt/lists/*
 
 # Set Home Directories
 ENV SPARK_HOME="/opt/spark"
@@ -59,7 +62,6 @@ ENV PATH="${SPARK_HOME}/bin/:${PATH}:${SPARK_HOME}/tmp/ivy2/jars" \
 RUN cp -p "${SPARK_HOME}/conf/spark-defaults.conf.template" "${SPARK_HOME}/conf/spark-defaults.conf" && \
     echo 'spark.driver.extraJavaOptions -Dio.netty.tryReflectionSetAccessible=true' >> "${SPARK_HOME}/conf/spark-defaults.conf" && \
     echo 'spark.executor.extraJavaOptions -Dio.netty.tryReflectionSetAccessible=true' >> "${SPARK_HOME}/conf/spark-defaults.conf" && \
-    echo "spark.jars.packages org.apache.spark:spark-hive_2.12:3.1.2,org.apache.hadoop:hadoop-azure-datalake:3.0.0-alpha1,com.microsoft.azure:azure-storage:8.6.3,io.delta:delta-core_2.12:$DELTA_VERSION,org.apache.hadoop:hadoop-azure:${HADOOP_VERSION},com.azure:azure-storage-blob:12.25.2" >> "${SPARK_HOME}/conf/spark-defaults.conf" && \
     echo 'spark.serializer org.apache.spark.serializer.KryoSerializer' >> "${SPARK_HOME}/conf/spark-defaults.conf" && \
     echo 'spark.sql.catalog.spark_catalog org.apache.spark.sql.delta.catalog.DeltaCatalog'  >> "${SPARK_HOME}/conf/spark-defaults.conf" && \
     echo 'spark.sql.extensions io.delta.sql.DeltaSparkSessionExtension' >> "${SPARK_HOME}/conf/spark-defaults.conf" &&\
@@ -68,6 +70,14 @@ RUN cp -p "${SPARK_HOME}/conf/spark-defaults.conf.template" "${SPARK_HOME}/conf/
     echo "spark.sql.catalogImplementation hive" >> "${SPARK_HOME}/conf/spark-defaults.conf" &&\
     echo "spark.sql.execution.arrow.pyspark.enabled true" >> "${SPARK_HOME}/conf/spark-defaults.conf"
 
+# Dynamically set delta package based on DELTA_VERSION
+RUN cp -p "${SPARK_HOME}/conf/spark-defaults.conf.template" "${SPARK_HOME}/conf/spark-defaults.conf" && \
+    if [ "$(printf '3\n%s' "$DELTA_VERSION" | sort -V | head -n1)" = "3" ]; then \
+        DELTA_PACKAGE="io.delta:delta-spark_2.12:$DELTA_VERSION"; \
+    else \
+        DELTA_PACKAGE="io.delta:delta-core_2.12:$DELTA_VERSION"; \
+    fi && \
+    echo "spark.jars.packages org.apache.spark:spark-hive_2.12:3.1.2,org.apache.hadoop:hadoop-azure-datalake:3.0.0-alpha1,com.microsoft.azure:azure-storage:8.6.3,$DELTA_PACKAGE,org.apache.hadoop:hadoop-azure:${HADOOP_VERSION},com.azure:azure-storage-blob:12.25.2" >> "${SPARK_HOME}/conf/spark-defaults.conf"
 
 ###########################################
 # Install Hive
@@ -88,17 +98,6 @@ COPY hive/conf/hive-site.xml $HIVE_CONF_DIR/
 ENV SPARK_CLASSPATH="$SPARK_CLASSPATH:$HIVE_HOME/lib/"
 
 COPY hive/conf/hive-site.xml $SPARK_HOME/conf/hive-site.xml
-
-# RUN set -x \
-#  && curl -fsSL https://archive.apache.org/dist/hive/KEYS -o /tmp/hive-KEYS  \
-#  && gpg --import /tmp/hive-KEYS \
-#  && mkdir $HIVE_HOME \
-#  && curl -fsSL $HIVE_URL -o /tmp/hive.tar.gz \
-#  && curl -fsSL $HIVE_URL.asc -o /tmp/hive.tar.gz.asc \
-#  && gpg --verify /tmp/hive.tar.gz.asc \
-#  && tar -xf /tmp/hive.tar.gz -C $HIVE_HOME --strip-components 1 \
-#  && rm /tmp/hive*
-
 
 #############################################
 # install HADOOP
