@@ -25,6 +25,18 @@ RUN pip install -r /home/requirements.txt
 RUN rm /home/requirements.txt
 
 #############################################
+# install add sudo and add vsts user for Azure Devops Pipelines
+############################################
+
+# Install sudo
+RUN apt-get update && apt-get install -y sudo
+
+# Create the vsts_azpcontainer user if it doesn't already exist
+# and add it to the sudo group with no password required for sudo commands
+RUN useradd -m vsts_azpcontainer || true && \
+    echo "vsts_azpcontainer ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
+
+#############################################
 # install spark
 ############################################
 
