@@ -218,15 +218,15 @@ RUN wget --verbose "http://apache.mirrors.pair.com/db/derby/db-derby-$DERBY_VERS
 ###########################################
 
 #Set Livy variables
-ENV LIVY_PORT 8998 \
-    LIVY_HOME /usr/livy \
-    LIVY_CONF_DIR "${LIVY_HOME}/conf"
+ENV LIVY_PORT=8998 \
+    LIVY_HOME=/opt/livy \
+    LIVY_CONF_DIR="${LIVY_HOME}/conf"
 
 RUN curl --progress-bar -L --retry 3 \
     "https://archive.apache.org/dist/incubator/livy/${LIVY_VERSION}/apache-livy-${LIVY_VERSION}_2.12-bin.zip" \
     -o "/tmp/apache-livy-${LIVY_VERSION}_2.12-bin.zip" \
-  && unzip -qq "/tmp/apache-livy-${LIVY_VERSION}_2.12-bin.zip" -d /usr \
-  && mv "/usr/apache-livy-${LIVY_VERSION}_2.12-bin" "${LIVY_HOME}" \
+  && unzip -qq "/tmp/apache-livy-${LIVY_VERSION}_2.12-bin.zip" -d /tmp/ \
+  && mv /tmp/apache-livy-${LIVY_VERSION}_2.12-bin ${LIVY_HOME} \
   && rm "/tmp/apache-livy-${LIVY_VERSION}_2.12-bin.zip" \
   && mkdir "${LIVY_HOME}/logs" \
   && chown -R root:root "${LIVY_HOME}"
@@ -254,7 +254,6 @@ COPY sparkmagic/example_config.json /home/root/.sparkmagic/config.json
 
 # Setup directories, configure Sparkmagic, and install Jupyter kernels in a single RUN to reduce layers
 RUN mkdir -p /home/root/.sparkmagic && \
-    cp sparkmagic/example_config.json /home/root/.sparkmagic/config.json && \
     sed -i 's/localhost/spark/g' /home/root/.sparkmagic/config.json && \
     jupyter nbextension enable --py --sys-prefix widgetsnbextension && \
     KERNELS_LOCATION=$(pip show sparkmagic | grep Location | cut -d" " -f2)/sparkmagic/kernels && \
@@ -268,7 +267,7 @@ RUN mkdir -p /home/root/.sparkmagic && \
 ###########################################
 
 #Install XML and JSON tools
-RUN apt-get -y install xmlstarlet jq
+RUN apt-get update && apt-get -y install xmlstarlet jq
 
 #ADD and configure bootstrap script
 COPY bootstrap.sh /etc/bootstrap.sh
@@ -305,5 +304,3 @@ RUN rm -rf /tmp/*
 ADD bootstrap.sh /etc/bootstrap.sh
 
 CMD ["bash","/etc/bootstrap.sh"]
-
-#CMD tail -f /dev/null
