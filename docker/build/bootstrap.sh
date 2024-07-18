@@ -21,18 +21,6 @@ bash $HADOOP_PREFIX/etc/hadoop/mapred-env.sh
 bash $SPARK_HOME/conf/spark-env.sh
 echo $HADOOP_OPTS
 
-su -c "/usr/lib/postgresql/15/bin/pg_ctl start -D /home/postgres/data &" postgres
-psql -U postgres -c "CREATE ROLE hive;"
-psql -U postgres -c "CREATE USER hive WITH PASSWORD 'hive';"
-psql -U postgres -c "GRANT postgres TO hive;"
-psql -U postgres -c "CREATE DATABASE metastore;"
-psql -U postgres -c "GRANT ALL PRIVILEGES ON DATABASE metastore TO hive;"
-psql -U postgres -c "ALTER ROLE hive WITH LOGIN PASSWORD 'hive';"
-psql -U postgres -c "GRANT ALL PRIVILEGES ON SCHEMA public TO hive;"
-psql -U postgres -c "ALTER SCHEMA public OWNER TO postgres;"
-psql -U postgres -c "GRANT USAGE, CREATE ON SCHEMA public TO hive;"
-psql -U postgres -c "GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO hive;"
-
 #loop through Azure Storage Accounts JSON Array and add the values in the HADOOP Config files
 echo $AZURE_STORAGE_ACCOUNTS | jq -c '.[]' | while read i; do \
         AZURE_STORAGE_ACCOUNT_NAME=$(echo $i | jq -r '.StorageAccountName') && \
