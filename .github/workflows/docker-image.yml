@@ -50,3 +50,4 @@ jobs:
           HIVE_VERSION=${{ steps.dotenv.outputs.hive_version }}
           LIVY_VERSION=${{ steps.dotenv.outputs.livy_version }}
           DERBY_VERSION=${{ steps.dotenv.outputs.derby_version }}
+          JAVA_VERSION=${{ steps.dotenv.outputs.java_version }}
