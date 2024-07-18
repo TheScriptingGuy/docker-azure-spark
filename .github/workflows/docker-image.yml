@@ -39,3 +39,6 @@ jobs:
           SPARK_VERSION=${{ vars.SPARK_VERSION }}
           DELTA_VERSION=${{ vars.DELTA_VERSION }} 
           HADOOP_VERSION=${{ vars.HADOOP_VERSION }}
+          HIVE_VERSION=${{ vars.HIVE_VERSION }}
+          LIVY_VERSION=${{ vars.LIVY_VERSION }} 
+          DERBY_VERSION=${{ vars.DERBY_VERSION }}
