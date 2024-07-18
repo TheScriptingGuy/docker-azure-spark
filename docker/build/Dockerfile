@@ -96,6 +96,8 @@ COPY hive/conf/hive-site.xml $HIVE_CONF_DIR/
 
 ENV SPARK_CLASSPATH="$SPARK_CLASSPATH:$HIVE_HOME/lib/"
 
+COPY hive/conf/hive-site.xml $SPARK_HOME/conf/hive-site.xml
+
 # RUN set -x \
 #  && curl -fsSL https://archive.apache.org/dist/hive/KEYS -o /tmp/hive-KEYS  \
 #  && gpg --import /tmp/hive-KEYS \
@@ -143,8 +145,8 @@ ENV SPARK_EXTRA_CLASSPATH="$SPARK_CLASSPATH:$${SPARK_HOME}/tmp/ivy2/jars/*"
 ENV SPARK_CLASSPATH="$SPARK_CLASSPATH:$HADOOP_CLASSPATH:$SPARK_EXTRA_CLASSPATH"
 
 # Set Default Environment Variables in HADOOP ENV.sh
-RUN sed -i '/^export JAVA_HOME/ s:.*:export JAVA_HOME=/usr/java/default\nexport HADOOP_PREFIX=/home/hadoop\nexport HADOOP_HOME=/home/hadoop\n:' $HADOOP_PREFIX/etc/hadoop/hadoop-env.sh
-RUN sed -i '/^export HADOOP_CONF_DIR/ s:.*:export HADOOP_CONF_DIR=/home/hadoop/etc/hadoop/:' $HADOOP_PREFIX/etc/hadoop/hadoop-env.sh
+RUN sed -i '/^export JAVA_HOME/ s:.*:export JAVA_HOME=/usr/java/default\nexport HADOOP_PREFIX=/home/hadoop\nexport HADOOP_HOME=$HADOOP_HOME\n:' $HADOOP_PREFIX/etc/hadoop/hadoop-env.sh
+RUN sed -i '/^export HADOOP_CONF_DIR/ s:.*:export HADOOP_CONF_DIR=$HADOOP_HOME/etc/hadoop/:' $HADOOP_PREFIX/etc/hadoop/hadoop-env.sh
 
 
 RUN mkdir $HADOOP_PREFIX/input && \
@@ -196,15 +198,31 @@ RUN echo 'export JAVA_HOME=/opt/java/openjdk' >> ~/.bashrc && \
     # Set HADOOP_OPTS as an environment variable for immediate effect in Docker layers
 ENV HADOOP_OPTS="-Djava.library.path=$HADOOP_PREFIX/lib/native"
 
+RUN echo 'export SPARK_DIST_CLASSPATH="$($HADOOP_HOME/bin/hadoop classpath:${SPARK_HOME}/tmp/ivy2:$HIVE_HOME/lib classpath)"' >> /etc/environment
+
+RUN for f in ${SPARK_HOME}/jars/*.jar; do \
+        CLASSPATH=${CLASSPATH}:$f; \
+    done
+
+    
+ENV HADOOP_CLASSPATH="$HADOOP_CLASSPATH:$HIVE_HOME/lib/*"
+
+ENV SPARK_CLASSPATH="$SPARK_CLASSPATH:$HADOOP_CLASSPATH"
+
 ###########################################
 # Install Python & Spark dependencies
 ###########################################
 
+# Install pyspark and delta-spark using pip
+RUN pip install --no-cache-dir pyspark==${SPARK_VERSION} delta-spark==$DELTA_VERSION ipykernel
+
 #Install Spark dependencies by running Spark once
 RUN python -c "from pyspark.sql import SparkSession; spark = SparkSession.builder.getOrCreate(); spark.stop()"  && python -m spylon_kernel install
 
-# Install pyspark and delta-spark using pip
-RUN pip install --no-cache-dir pyspark==${SPARK_VERSION} delta-spark==$DELTA_VERSION ipykernel
+# Add Spark IVY jars to the CLASSPATH
+RUN for f in ${SPARK_HOME}/tmp/ivy2/jars/*.jar; do \
+        CLASSPATH=${CLASSPATH}:$f; \
+    done
 
 # Setup directories, configure Sparkmagic, and install Jupyter kernels in a single RUN to reduce layers
 RUN mkdir -p /home/root/.sparkmagic && \
@@ -249,28 +267,16 @@ RUN curl --progress-bar -L --retry 3 \
   && mkdir "${LIVY_HOME}/logs" \
   && chown -R root:root "${LIVY_HOME}"
 
+COPY livy/conf/livy.conf /usr/livy/conf/livy.conf
+
 HEALTHCHECK CMD curl -f "http://host.docker.internal:${LIVY_PORT}/" || exit 1
-
-
-
-RUN apt-get -y install xmlstarlet jq postgresql postgresql-contrib
-
-
-RUN mkdir /home/postgres
-RUN mkdir /home/postgres/data
-
-RUN chown -R postgres:postgres /home/postgres
-
-USER postgres
-
-COPY hive/postgres/init.sql /home/postgres/init.sql
-
-RUN /usr/lib/postgresql/15/bin/initdb -D /home/postgres/data
-
 
 ###########################################
 # Finalize
 ###########################################
+
+#Install XML and JSON tools
+RUN apt-get -y install xmlstarlet jq
 
 # Add and configure bootstrap script
 COPY bootstrap.sh /etc/bootstrap.sh
@@ -297,32 +303,10 @@ EXPOSE 2122 49707
 # Apache Livy Port
 EXPOSE 8998
 
-
-#RUN echo "include_if_exists = '/home/postgres/init.sql'" >> /home/postgres/data/postgresql.conf
-
-EXPOSE 5432
-
 USER root
 
 RUN echo 'export PATH=$PATH:$HADOOP_PREFIX/bin:$SPARK_HOME/bin:$HIVE_HOME/bin' >> ~/.bashrc
 
-ENV HADOOP_CLASSPATH="$HADOOP_CLASSPATH:$HIVE_HOME/lib/*"
-
-ENV SPARK_CLASSPATH="$SPARK_CLASSPATH:$HADOOP_CLASSPATH"
 ADD bootstrap.sh /etc/bootstrap.sh
-COPY livy/conf/livy.conf /usr/livy/conf/livy.conf
-COPY hive/conf/hive-site.xml $SPARK_HOME/conf/hive-site.xml
-RUN wget https://jdbc.postgresql.org/download/postgresql-42.2.5.jar -O postgresql-42.2.5.jar
-RUN cp ./postgresql-42.2.5.jar $HIVE_HOME/lib/
-RUN cp ./postgresql-42.2.5.jar $SPARK_HOME/jars/
-ENV CLASSPATH=$CLASSPATH:$HIVE_HOME/lib/postgresql-42.2.5.jar
-RUN echo 'export SPARK_DIST_CLASSPATH="$($HADOOP_HOME/bin/hadoop classpath:${SPARK_HOME}/tmp/ivy2:$HIVE_HOME/lib classpath)"' >> /etc/environment
-
-RUN for f in ${SPARK_HOME}/jars/*.jar; do \
-        CLASSPATH=${CLASSPATH}:$f; \
-    done
-RUN for f in ${SPARK_HOME}/tmp/ivy2/jars/*.jar; do \
-        CLASSPATH=${CLASSPATH}:$f; \
-    done
 
 CMD ["bash","/etc/bootstrap.sh"]
