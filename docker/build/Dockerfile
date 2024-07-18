@@ -294,9 +294,11 @@ EXPOSE 2122 49707
 # Apache Livy Port
 EXPOSE 8998
 
-# USER root
+USER root
 
 RUN echo 'export PATH=$PATH:$HADOOP_PREFIX/bin:$SPARK_HOME/bin:$HIVE_HOME/bin' >> ~/.bashrc
+ENV YARN_RESOURCEMANAGER_USER=root \
+    YARN_NODEMANAGER_USER=root
 
 # Clean up temporary files
 RUN rm -rf /tmp/*
