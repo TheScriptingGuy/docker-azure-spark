@@ -35,7 +35,7 @@ jobs:
         path: docker/build/.env
         log-variables: true
         export-variables: true
-        
+
     - name: Build and push
       uses: docker/build-push-action@v2
       with:
@@ -43,10 +43,10 @@ jobs:
         push: true
         tags: portablespark/docker-azure-spark:${{ github.ref_name }}
         build-args: |
-          PYTHON_VERSION=${{ env.PYTHON_VERSION }}
-          SPARK_VERSION=${{ env.SPARK_VERSION }}
-          DELTA_VERSION=${{ env.DELTA_VERSION }}
-          HADOOP_VERSION=${{ env.HADOOP_VERSION }}
-          HIVE_VERSION=${{ env.HIVE_VERSION }}
-          LIVY_VERSION=${{ env.LIVY_VERSION }}
-          DERBY_VERSION=${{ env.DERBY_VERSION }}
+          PYTHON_VERSION=${{ steps.dotenv.outputs.python_version }}
+          SPARK_VERSION=${{ steps.dotenv.outputs.spark_version }}
+          DELTA_VERSION=${{ steps.dotenv.outputs.delta_version }}
+          HADOOP_VERSION=${{ steps.dotenv.outputs.hadoop_version }}
+          HIVE_VERSION=${{ steps.dotenv.outputs.hive_version }}
+          LIVY_VERSION=${{ steps.dotenv.outputs.livy_version }}
+          DERBY_VERSION=${{ steps.dotenv.outputs.derby_version }}
