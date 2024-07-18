@@ -1,60 +1,67 @@
 FROM python:3.10
-ENV JAVA_HOME=/opt/java/openjdk
+
+# Set environment variables
+ENV JAVA_HOME=/opt/java/openjdk \
+    PATH="${JAVA_HOME}/bin:${PATH}" \
+    PIPENV_VENV_IN_PROJECT=1
 
 ARG PYTHON_VERSION
 ARG SPARK_VERSION
 ARG DELTA_VERSION
 ARG HADOOP_VERSION
+ARG HIVE_VERSION
+ARG LIVY_VERSION
+ARG DERBY_VERSION
 
 COPY --from=eclipse-temurin:8-jre $JAVA_HOME $JAVA_HOME
-ENV PATH="${JAVA_HOME}/bin:${PATH}"
+# Install dependencies and cleanup in a single layer
+RUN apt-get update && apt-get -y upgrade && apt-get -y install tree \
+    && python -m pip install --upgrade pip \
+    && pip install --no-cache-dir pipenv \
+    && rm -rf /var/lib/apt/lists/*
 
-RUN apt-get -y update
-RUN apt-get -y upgrade
-RUN apt-get -y install tree
-ENV PIPENV_VENV_IN_PROJECT=1
+# Handle Python dependencies
+ADD requirements.txt /tmp/
+RUN pip install -r /tmp/requirements.txt && rm /tmp/requirements.txt
 
-# ENV PIPENV_VENV_IN_PROJECT=1 is important: it causes the resuling virtual environment to be created as /app/.venv. Without this the environment gets created somewhere surprising, such as /root/.local/share/virtualenvs/app-4PlAip0Q - which makes it much harder to write automation scripts later on.
-
-ADD requirements.txt /home/requirements.txt
-
-RUN python -m pip install --upgrade pip
-RUN pip install --no-cache-dir pipenv
-RUN pip install -r /home/requirements.txt
-
-RUN rm /home/requirements.txt
-
-#############################################
-# install add sudo and add vsts user for Azure Devops Pipelines
-############################################
-
-# Install sudo
-RUN apt-get update && apt-get install -y sudo
+# Combine apt-get update, installations, and cleanup into a single RUN to reduce layers
+RUN apt-get update && apt-get install -y \
+    sudo \
+    && rm -rf /var/lib/apt/lists/*
 
 # Create the vsts_azpcontainer user if it doesn't already exist
 # and add it to the sudo group with no password required for sudo commands
-RUN useradd -m vsts_azpcontainer || true && \
-    echo "vsts_azpcontainer ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
+#RUN useradd -m vsts_azpcontainer || true && \
+#    echo "vsts_azpcontainer ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
+
+# Assuming there are additional steps to add a user for Azure DevOps Pipelines
+# Add a user 'vsts' with sudo privileges
+#RUN useradd -m vsts && echo "vsts ALL=(root) NOPASSWD:ALL" > /etc/sudoers.d/vsts && chmod 0440 /etc/sudoers.d/vsts
+
+# Set Home Directories
+ENV SPARK_HOME="/opt/spark"
+ENV HIVE_HOME="/opt/hive"
+ENV HADOOP_HOME="/opt/hadoop"
+
+#mkdir
+RUN mkdir -p $SPARK_HOME && mkdir -p $HADOOP_HOME && mkdir -p $HIVE_HOME
 
 #############################################
 # install spark
 ############################################
 
-# DOWNLOAD SPARK AND INSTALL
-RUN DOWNLOAD_URL_SPARK="https://archive.apache.org/dist/spark/spark-${SPARK_VERSION}/spark-${SPARK_VERSION}-bin-hadoop3.tgz" \
-    && wget --verbose -O apache-spark.tgz  "${DOWNLOAD_URL_SPARK}"\
-    && mkdir -p /home/spark \
-    && tar -xf apache-spark.tgz -C /home/spark --strip-components=1 \
-    && rm apache-spark.tgz
+RUN wget --verbose "https://archive.apache.org/dist/spark/spark-$SPARK_VERSION/spark-$SPARK_VERSION-bin-hadoop$(echo $HADOOP_VERSION | cut -d '.' -f1).tgz" -O /tmp/spark.tgz && \
+        tar -xf /tmp/spark.tgz -C $SPARK_HOME --strip-components=1 && \
+        rm /tmp/spark.tgz; 
 
 # SET SPARK ENV VARIABLES
-ENV SPARK_HOME="/home/spark"
-ENV PATH="${SPARK_HOME}/bin/:${PATH}:${SPARK_HOME}/tmp/ivy2/jars"
-ENV HADOOP_HOME="/home/hadoop"
-
-ENV SPARK_CLASSPATH="${SPARK_HOME}/jars/*"
-ENV SPARK_EXTRA_CLASSPATH="$SPARK_CLASSPATH:${SPARK_HOME}/tmp/ivy2/jars/*"
-ENV SPARK_CLASSPATH="$SPARK_CLASSPATH:$SPARK_EXTRA_CLASSPATH:$HADOOP_PREFIX/etc/hadoop"
+ENV PATH="${SPARK_HOME}/bin/:${PATH}:${SPARK_HOME}/tmp/ivy2/jars" \
+    SPARK_HOME="${SPARK_HOME}" \
+    SPARK_CONF_DIR="${SPARK_HOME}/conf" \
+    SPARK_DIST_CLASSPATH="${SPARK_HOME}/jars/*" \
+    SPARK_EXTRA_CLASSPATH="$SPARK_CLASSPATH:${SPARK_HOME}/tmp/ivy2/jars/*" \
+    SPARK_CLASSPATH="$SPARK_CLASSPATH:$SPARK_EXTRA_CLASSPATH:$HADOOP_PREFIX/etc/hadoop" \
+    SPARK_PUBLIC_DNS=localhost
 
 # Fix Spark installation for Java 11 and Apache Arrow library
 # see: https://github.com/apache/spark/pull/27356, https://spark.apache.org/docs/latest/#downloading
@@ -71,16 +78,46 @@ RUN cp -p "${SPARK_HOME}/conf/spark-defaults.conf.template" "${SPARK_HOME}/conf/
     echo "spark.sql.execution.arrow.pyspark.enabled true" >> "${SPARK_HOME}/conf/spark-defaults.conf"
 
 
+###########################################
+# Install Hive
+###########################################
+
+RUN if [ -n "$HIVE_VERSION" ]; then \
+        wget  --verbose "https://archive.apache.org/dist/hive/hive-${HIVE_VERSION}/apache-hive-${HIVE_VERSION}-bin.tar.gz" -O /tmp/hive.tar.gz && \
+        tar -xf /tmp/hive.tar.gz -C /opt/hive && \
+        rm /tmp/hive.tar.gz; \
+    fi
+
+# SET HIVE ENV VARIABLES
+ENV HIVE_HOME=/opt/hive
+ENV HIVE_CONF_DIR=$HIVE_HOME/conf
+ENV PATH=$HIVE_HOME/sbin:$HIVE_HOME/bin:$PATH
+COPY hive/conf/hive-site.xml $HIVE_CONF_DIR/
+
+ENV SPARK_CLASSPATH="$SPARK_CLASSPATH:$HIVE_HOME/lib/"
+
+# RUN set -x \
+#  && curl -fsSL https://archive.apache.org/dist/hive/KEYS -o /tmp/hive-KEYS  \
+#  && gpg --import /tmp/hive-KEYS \
+#  && mkdir $HIVE_HOME \
+#  && curl -fsSL $HIVE_URL -o /tmp/hive.tar.gz \
+#  && curl -fsSL $HIVE_URL.asc -o /tmp/hive.tar.gz.asc \
+#  && gpg --verify /tmp/hive.tar.gz.asc \
+#  && tar -xf /tmp/hive.tar.gz -C $HIVE_HOME --strip-components 1 \
+#  && rm /tmp/hive*
+
+
 #############################################
 # install HADOOP
 ############################################
 
-RUN wget -O hadoop-${HADOOP_VERSION}.tar.gz https://archive.apache.org/dist/hadoop/common/hadoop-${HADOOP_VERSION}/hadoop-${HADOOP_VERSION}.tar.gz \
-    && mkdir -p /home/hadoop \
-    && tar -xf hadoop-${HADOOP_VERSION}.tar.gz -C /home/hadoop --strip-components=1 \
-    && rm hadoop-${HADOOP_VERSION}.tar.gz
+RUN if [ -n "$HADOOP_VERSION" ]; then \
+        wget --verbose "https://archive.apache.org/dist/hadoop/common/hadoop-${HADOOP_VERSION}/hadoop-${HADOOP_VERSION}.tar.gz" -O /tmp/hadoop.tar.gz && \
+        tar -xf /tmp/hadoop.tar.gz -C $HADOOP_HOME && \
+        rm /tmp/hadoop.tar.gz; \
+    fi
 
-
+# SET HADOOP ENV VARIABLES
 ENV HADOOP_COMMON_LIB_NATIVE_DIR=$HADOOP_HOME/lib/native \
     HADOOP_OPTS="-Djava.library.path=$HADOOP_HOME/lib" \
     HADOOP_OPTS="-Djava.library.path=$HADOOP_COMMON_LIB_NATIVE_DIR" \
@@ -90,63 +127,54 @@ ENV HADOOP_COMMON_LIB_NATIVE_DIR=$HADOOP_HOME/lib/native \
     HADOOP_COMMON_HOME="$HADOOP_PREFIX" \
     HADOOP_COMMON_LIB_NATIVE_DIR="$HADOOP_PREFIX/lib/native" \
     HADOOP_CONF_DIR="$HADOOP_PREFIX/etc/hadoop" \
-    JAVA_LIBRARY_PATH="$HADOOP_HOME/lib/native:$JAVA_LIBRARY_PATH" 
+    JAVA_LIBRARY_PATH="$HADOOP_HOME/lib/native:$JAVA_LIBRARY_PATH" \
+    HADOOP_PREFIX=/opt/hadoop \
+    HADOOP_COMMON_HOME=/opt/hadoop \
+    HADOOP_HDFS_HOME=/opt/hadoop \
+    HADOOP_MAPRED_HOME=/opt/hadoop \
+    HADOOP_YARN_HOME=/opt/hadoop \
+    HADOOP_CONF_DIR=/opt/hadoop/etc/hadoop \
+    YARN_CONF_DIR=$HADOOP_PREFIX/etc/hadoop \
+    HADOOP_CLASSPATH="$HADOOP_HOME/share/hadoop/tools/lib/*"
 
-
-ENV HADOOP_PREFIX /home/hadoop
-ENV HADOOP_COMMON_HOME /home/hadoop
-ENV HADOOP_HDFS_HOME /home/hadoop
-ENV HADOOP_MAPRED_HOME /home/hadoop
-ENV HADOOP_YARN_HOME /home/hadoop
-ENV HADOOP_CONF_DIR /home/hadoop/etc/hadoop
-ENV YARN_CONF_DIR $HADOOP_PREFIX/etc/hadoop
-
+# Set SPARK CLASSPATH
 RUN echo 'export SPARK_DIST_CLASSPATH="$($HADOOP_HOME/bin/hadoop classpath:${SPARK_HOME}/tmp/ivy2)"' >> /etc/environment
-
-ENV HADOOP_CLASSPATH="$HADOOP_HOME/share/hadoop/tools/lib/*"
 ENV SPARK_EXTRA_CLASSPATH="$SPARK_CLASSPATH:$${SPARK_HOME}/tmp/ivy2/jars/*"
 ENV SPARK_CLASSPATH="$SPARK_CLASSPATH:$HADOOP_CLASSPATH:$SPARK_EXTRA_CLASSPATH"
 
-
+# Set Default Environment Variables in HADOOP ENV.sh
 RUN sed -i '/^export JAVA_HOME/ s:.*:export JAVA_HOME=/usr/java/default\nexport HADOOP_PREFIX=/home/hadoop\nexport HADOOP_HOME=/home/hadoop\n:' $HADOOP_PREFIX/etc/hadoop/hadoop-env.sh
 RUN sed -i '/^export HADOOP_CONF_DIR/ s:.*:export HADOOP_CONF_DIR=/home/hadoop/etc/hadoop/:' $HADOOP_PREFIX/etc/hadoop/hadoop-env.sh
 
 
-RUN mkdir $HADOOP_PREFIX/input
-RUN cp $HADOOP_PREFIX/etc/hadoop/*.xml $HADOOP_PREFIX/input
+RUN mkdir $HADOOP_PREFIX/input && \
+    cp $HADOOP_PREFIX/etc/hadoop/*.xml $HADOOP_PREFIX/input
 
-
-# install ssh and run through supervisor
-RUN apt-get install -y ssh supervisor
-RUN mkdir /var/run/sshd
-RUN ssh-keygen -t rsa -P '' -f ~/.ssh/id_rsa && \
+# Install ssh and supervisor, setup SSH keys, and configure known hosts in one RUN command
+RUN apt-get update && apt-get install -y ssh supervisor && \
+    mkdir /var/run/sshd && \
+    ssh-keygen -t rsa -P '' -f ~/.ssh/id_rsa && \
     cat ~/.ssh/id_rsa.pub >> ~/.ssh/authorized_keys && \
-    chmod 0600 ~/.ssh/authorized_keys
-RUN /usr/sbin/sshd && ssh-keyscan -H localhost >> /root/.ssh/known_hosts && ssh-keyscan -H 127.0.0.1 >> /root/.ssh/known_hosts
+    chmod 0600 ~/.ssh/authorized_keys && \
+    /usr/sbin/sshd && \
+    ssh-keyscan -H localhost >> /root/.ssh/known_hosts && \
+    ssh-keyscan -H 127.0.0.1 >> /root/.ssh/known_hosts && \
+    rm -rf /var/lib/apt/lists/* # Clean up apt cache to reduce image size
 
 
+# Add Hadoop configuration files
+COPY hadoop/conf/*.xml $HADOOP_PREFIX/etc/hadoop/
 
-# pseudo distributed
-ADD hadoop/conf/core-site.xml $HADOOP_PREFIX/etc/hadoop/core-site.xml
+# Additionally, copy to /etc/hadoop for global settings if necessary
+COPY hadoop/conf/*.xml /etc/hadoop/
 
-ADD hadoop/conf/hdfs-site.xml $HADOOP_PREFIX/etc/hadoop/hdfs-site.xml
+# Combine directory creation steps to reduce layers
+RUN mkdir -p /data/yarn/nodemanager/log /data/yarn/nodemanager/data /data/hdfs/datanode /data/hdfs/namenode /data/transfert
 
-ADD hadoop/conf/mapred-site.xml $HADOOP_PREFIX/etc/hadoop/mapred-site.xml
+# Add Hadoop slave configuration
+COPY hadoop/conf/slaves $HADOOP_PREFIX/etc/hadoop/slaves
 
-ADD hadoop/conf/yarn-site.xml $HADOOP_PREFIX/etc/hadoop/yarn-site.xml
-
-ADD hadoop/conf/core-site.xml /etc/hadoop/core-site.xml
-ADD hadoop/conf/yarn-site.xml /etc/hadoop/yarn-site.xml
-ADD hadoop/conf/mapred-site.xml /etc/hadoop/mapred-site.xml
-ADD hadoop/conf/hdfs-site.xml $HADOOP_PREFIX/etc/hadoop/hdfs-site.xml
-ADD hadoop/conf/capacity-scheduler.xml /etc/hadoop/capacity-scheduler.xml
-RUN mkdir -p /data/yarn/nodemanager/log /data/yarn/nodemanager/data /data/hdfs/datanode /data/hdfs/namenode
-RUN mkdir -p /data/transfert
-
-
-# slave management
-ADD hadoop/conf/slaves $HADOOP_PREFIX/etc/hadoop/slaves
-
+# Formats the HDFS namenode, initializing the directory structure and metadata for HDFS. This is a necessary step for setting up a new Hadoop cluster.
 RUN $HADOOP_PREFIX/bin/hdfs namenode -format
 
 # workaround docker.io build error
@@ -154,118 +182,76 @@ RUN ls -la /home/hadoop/etc/hadoop/*-env.sh && \
     chmod +x /home/hadoop/etc/hadoop/*-env.sh && \
     ls -la /home/hadoop/etc/hadoop/*-env.sh
 
-ENV HDFS_NAMENODE_USER root
-ENV HDFS_DATANODE_USER root
-ENV HDFS_SECONDARYNAMENODE_USER root
-ENV YARN_RESOURCEMANAGER_USER=root
-ENV YARN_NODEMANAGER_USER=root
-ENV YARN_PROXYSERVER_USER=root
+# Combine directory creation steps to reduce layers
+RUN mkdir -p /data/yarn/nodemanager/log /data/yarn/nodemanager/data /data/hdfs/datanode /data/hdfs/namenode /data/transfert
 
-###########################################
-# Finalize
-###########################################
-# Set environment variables for new bash sessions, when starting Hadoop and Spark
-RUN echo 'export JAVA_HOME=/opt/java/openjdk' >> ~/.bashrc
+# Add Hadoop slave configuration
+COPY hadoop/conf/slaves $HADOOP_PREFIX/etc/hadoop/slaves
 
-RUN echo 'export HADOOP_OPTS="-Djava.library.path=$HADOOP_PREFIX/lib/native"' >> ~/.bashrc
+# Combine setting environment variables and modifying .bashrc in a single RUN to reduce layers
+RUN echo 'export JAVA_HOME=/opt/java/openjdk' >> ~/.bashrc && \
+    echo 'export HADOOP_OPTS="-Djava.library.path=$HADOOP_PREFIX/lib/native"' >> ~/.bashrc && \
+    echo 'export HADOOP_OPTIONAL_TOOLS=hadoop-azure,hadoop-azure-datalake' >> ~/.bashrc
+
+    # Set HADOOP_OPTS as an environment variable for immediate effect in Docker layers
 ENV HADOOP_OPTS="-Djava.library.path=$HADOOP_PREFIX/lib/native"
-RUN echo 'export HADOOP_OPTIONAL_TOOLS=hadoop-azure,hadoop-azure-datalake' >> ~/.bashrc
 
-# configuration of supervisord
+###########################################
+# Install Python & Spark dependencies
+###########################################
 
-ADD bootstrap.sh /etc/bootstrap.sh
-RUN chown root:root /etc/bootstrap.sh && \
-    chmod 700 /etc/bootstrap.sh
-    
-# install data
-VOLUME ["/data"]
-
-# Expose ports
-# hdfs port
-EXPOSE 9000
-EXPOSE 8020
-# namenode port
-EXPOSE 50070
-# Resouce Manager
-EXPOSE 8032
-EXPOSE 8088
-# MapReduce JobHistory Server Web UI
-EXPOSE 19888
-# MapReduce JobHistory Server
-EXPOSE 10020
-# Zeppelin
-EXPOSE 8080
-
-# Hdfs ports
-EXPOSE 50010 50020 50070 50075 50090
-# Mapred ports
-EXPOSE 19888
-#Yarn ports
-EXPOSE 8030 8031 8032 8033 8040 8042 8088
-#Other ports
-EXPOSE 49707 2122   
-# Spark submit, admin console, executor, history server
-EXPOSE 7077 8080 65000 65001 65002 8085 8086 8087 18080
+#Install Spark dependencies by running Spark once
+RUN python -c "from pyspark.sql import SparkSession; spark = SparkSession.builder.getOrCreate(); spark.stop()"  && python -m spylon_kernel install
 
 # Install pyspark and delta-spark using pip
 RUN pip install --no-cache-dir pyspark==${SPARK_VERSION} delta-spark==$DELTA_VERSION ipykernel
 
-RUN python -c "from pyspark.sql import SparkSession; spark = SparkSession.builder.getOrCreate(); spark.stop()"  && python -m spylon_kernel install
+# Setup directories, configure Sparkmagic, and install Jupyter kernels in a single RUN to reduce layers
+RUN mkdir -p /home/root/.sparkmagic && \
+    cp sparkmagic/example_config.json /home/root/.sparkmagic/config.json && \
+    sed -i 's/localhost/spark/g' /home/root/.sparkmagic/config.json && \
+    jupyter nbextension enable --py --sys-prefix widgetsnbextension && \
+    KERNELS_LOCATION=$(pip show sparkmagic | grep Location | cut -d" " -f2)/sparkmagic/kernels && \
+    jupyter-kernelspec install --user ${KERNELS_LOCATION}/sparkkernel && \
+    jupyter-kernelspec install --user ${KERNELS_LOCATION}/pysparkkernel && \
+    jupyter-kernelspec install --user ${KERNELS_LOCATION}/sparkrkernel && \
+    jupyter serverextension enable --py sparkmagic
 
-RUN mkdir /home/root/
-RUN mkdir /home/root/.sparkmagic
-COPY sparkmagic/example_config.json /home/root/.sparkmagic/config.json
-RUN sed -i 's/localhost/spark/g' /home/root/.sparkmagic/config.json
-RUN jupyter nbextension enable --py --sys-prefix widgetsnbextension
-RUN jupyter-kernelspec install --user $(pip show sparkmagic | grep Location | cut -d" " -f2)/sparkmagic/kernels/sparkkernel
-RUN jupyter-kernelspec install --user $(pip show sparkmagic | grep Location | cut -d" " -f2)/sparkmagic/kernels/pysparkkernel
-RUN jupyter-kernelspec install --user $(pip show sparkmagic | grep Location | cut -d" " -f2)/sparkmagic/kernels/sparkrkernel
-RUN jupyter serverextension enable --py sparkmagic
+###########################################
+# Install Derby
+###########################################
 
-ARG LIVY_VERSION=0.8.0-incubating
-ENV LIVY_HOME /usr/livy
-ENV LIVY_CONF_DIR "${LIVY_HOME}/conf"
-ENV LIVY_PORT 8998
+#SET ENV Variables
+ENV DERBY_HOME /opt/derby \
+    PATH $PATH:$DERBY_HOME/bin
 
-ARG HIVE_VERSION=3.1.2
-ARG HIVE_URL=https://archive.apache.org/dist/hive/hive-$HIVE_VERSION/apache-hive-$HIVE_VERSION-bin.tar.gz
-ENV HIVE_HOME=/opt/hive
-
-RUN set -x \
- && curl -fsSL https://archive.apache.org/dist/hive/KEYS -o /tmp/hive-KEYS  \
- && gpg --import /tmp/hive-KEYS \
- && mkdir $HIVE_HOME \
- && curl -fsSL $HIVE_URL -o /tmp/hive.tar.gz \
- && curl -fsSL $HIVE_URL.asc -o /tmp/hive.tar.gz.asc \
- && gpg --verify /tmp/hive.tar.gz.asc \
- && tar -xf /tmp/hive.tar.gz -C $HIVE_HOME --strip-components 1 \
- && rm /tmp/hive*
-
-ENV HIVE_CONF_DIR=$HIVE_HOME/conf
-ENV PATH=$HIVE_HOME/sbin:$HIVE_HOME/bin:$PATH
-COPY hive/conf/hive-site.xml $HIVE_CONF_DIR/
-
-ENV SPARK_CLASSPATH="$SPARK_CLASSPATH:$HIVE_HOME/lib/"
+# Download and install Derby
+RUN wget --verbose "http://apache.mirrors.pair.com/db/derby/db-derby-$DERBY_VERSION/db-derby-$DERBY_VERSION-bin.tar.gz" -O /tmp/derby.tar.gz \
+    && mkdir -p "$DERBY_HOME" \
+    && tar -xzf /tmp/derby.tar.gz -C "$DERBY_HOME" --strip-components=1 \
+    && rm /tmp/derby.tar.gz
 
 ###########################################
 # Install Apache Livy
 ###########################################
 
+#Set Livy variables
+ENV LIVY_PORT 8998 \
+    LIVY_HOME /usr/livy \
+    LIVY_CONF_DIR "${LIVY_HOME}/conf"
+
 RUN curl --progress-bar -L --retry 3 \
     "https://archive.apache.org/dist/incubator/livy/${LIVY_VERSION}/apache-livy-${LIVY_VERSION}_2.12-bin.zip" \
-    -o "./apache-livy-${LIVY_VERSION}_2.12-bin.zip" \
-  && ls . \
-  && unzip -qq "./apache-livy-${LIVY_VERSION}_2.12-bin.zip" -d /usr \
+    -o "/tmp/apache-livy-${LIVY_VERSION}_2.12-bin.zip" \
+  && unzip -qq "/tmp/apache-livy-${LIVY_VERSION}_2.12-bin.zip" -d /usr \
   && mv "/usr/apache-livy-${LIVY_VERSION}_2.12-bin" "${LIVY_HOME}" \
-  && rm -rf "./apache-livy-${LIVY_VERSION}_2.12-bin.zip" \
+  && rm "/tmp/apache-livy-${LIVY_VERSION}_2.12-bin.zip" \
   && mkdir "${LIVY_HOME}/logs" \
   && chown -R root:root "${LIVY_HOME}"
 
-EXPOSE 8998
-
 HEALTHCHECK CMD curl -f "http://host.docker.internal:${LIVY_PORT}/" || exit 1
 
-ENV SPARK_PUBLIC_DNS=localhost
+
 
 RUN apt-get -y install xmlstarlet jq postgresql postgresql-contrib
 
@@ -280,6 +266,37 @@ USER postgres
 COPY hive/postgres/init.sql /home/postgres/init.sql
 
 RUN /usr/lib/postgresql/15/bin/initdb -D /home/postgres/data
+
+
+###########################################
+# Finalize
+###########################################
+
+# Add and configure bootstrap script
+COPY bootstrap.sh /etc/bootstrap.sh
+RUN chown root:root /etc/bootstrap.sh && chmod 700 /etc/bootstrap.sh
+
+# Hadoop NameNode, DataNode, Secondary NameNode, and other HDFS-related ports
+EXPOSE 8020 50010 50020 50070 50075 50090
+
+# YARN ResourceManager, NodeManager, and related ports
+EXPOSE 8030 8031 8032 8033 8040 8042 8088
+
+# Spark Master, Spark Worker (Executor), and Spark History Server ports
+EXPOSE 7077 8080 18080
+
+# Jupyter Notebook port
+EXPOSE 8888
+
+# MapReduce JobHistory Server ports
+EXPOSE 10020 19888
+
+# Additional ports for specific needs (e.g., SSH, custom applications)
+EXPOSE 2122 49707
+
+# Apache Livy Port
+EXPOSE 8998
+
 
 #RUN echo "include_if_exists = '/home/postgres/init.sql'" >> /home/postgres/data/postgresql.conf
 
