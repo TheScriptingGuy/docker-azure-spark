@@ -25,6 +25,18 @@ RUN pip install -r /home/requirements.txt
 RUN rm /home/requirements.txt
 
 #############################################
+# install add sudo and add vsts user for Azure Devops Pipelines
+############################################
+
+# Install sudo
+RUN apt-get update && apt-get install -y sudo
+
+# Create the vsts_azpcontainer user if it doesn't already exist
+# and add it to the sudo group with no password required for sudo commands
+RUN useradd -m vsts_azpcontainer || true && \
+    echo "vsts_azpcontainer ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
+
+#############################################
 # install spark
 ############################################
 
@@ -148,22 +160,6 @@ ENV HDFS_SECONDARYNAMENODE_USER root
 ENV YARN_RESOURCEMANAGER_USER=root
 ENV YARN_NODEMANAGER_USER=root
 ENV YARN_PROXYSERVER_USER=root
-###########################################
-# Install Node JS for Sonarlint integration
-###########################################
-
-ENV NODE_VERSION=21.0.0
-RUN apt install -y curl
-RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.0/install.sh | bash
-ENV NVM_DIR=/root/.nvm
-RUN . "$NVM_DIR/nvm.sh" && nvm install ${NODE_VERSION}
-RUN . "$NVM_DIR/nvm.sh" && nvm use v${NODE_VERSION}
-RUN . "$NVM_DIR/nvm.sh" && nvm alias default v${NODE_VERSION}
-ENV PATH="/root/.nvm/versions/node/v${NODE_VERSION}/bin/:${PATH}"
-RUN node --version
-RUN npm --version
-# Change the owner of the /root/.nvm directory to $UNAME
-RUN chown -R root:root /root/.nvm
 
 ###########################################
 # Finalize
@@ -290,18 +286,9 @@ RUN /usr/lib/postgresql/15/bin/initdb -D /home/postgres/data
 EXPOSE 5432
 
 USER root
-# ENV ZEPPELIN_HOME=/usr/local/zeppelin
-# ENV ZEPPELIN_VERSION=0.11.0
-# ENV ZEPPELIN_PORT=8082
-# ENV ZEPPELIN_ADDR=localhost
-# RUN wget https://downloads.apache.org/zeppelin/zeppelin-$ZEPPELIN_VERSION/zeppelin-$ZEPPELIN_VERSION-bin-all.tgz
-# RUN tar -xzvf zeppelin-$ZEPPELIN_VERSION-bin-all.tgz
-# RUN mv zeppelin-$ZEPPELIN_VERSION-bin-all $ZEPPELIN_HOME
-#COPY zeppelin/conf/zeppelin-site.xml $ZEPPELIN_HOME/conf/zeppelin-site.xml
-ENV PATH=$PATH:$HADOOP_PREFIX/bin:$SPARK_HOME/bin:$HIVE_HOME/bin:$ZEPPELIN_HOME/bin
-RUN echo 'export PATH=$PATH:$HADOOP_PREFIX/bin:$SPARK_HOME/bin:$HIVE_HOME/bin:$ZEPPELIN_HOME/bin' >> ~/.bashrc
-# ENV ZEPPELIN_ADDR=0.0.0.0
-# ENV ZEPPELIN_PORT=8082
+
+RUN echo 'export PATH=$PATH:$HADOOP_PREFIX/bin:$SPARK_HOME/bin:$HIVE_HOME/bin' >> ~/.bashrc
+
 ENV HADOOP_CLASSPATH="$HADOOP_CLASSPATH:$HIVE_HOME/lib/*"
 
 ENV SPARK_CLASSPATH="$SPARK_CLASSPATH:$HADOOP_CLASSPATH"
