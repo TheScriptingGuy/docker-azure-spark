@@ -30,7 +30,7 @@ jobs:
 
     - name: Load .env file
       id: dotenv
-      uses: falti/dotenv-action@v2.1
+      uses: falti/dotenv-action@v1.1.2
       with:
         path: docker/build/.env
 
