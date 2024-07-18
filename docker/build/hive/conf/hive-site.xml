@@ -25,22 +25,32 @@
         <value>thrift://0.0.0.0:9083</value>
         <description>Thrift URI for the remote metastore. Used by metastore client to connect to remote metastore.</description>
     </property>
-    <!--Postgres metastore connection details (stores info about tables etc.)-->
+    <!-- Derby metastore connection details (stores info about tables etc.) -->
     <property>
         <name>javax.jdo.option.ConnectionDriverName</name>
-        <value>org.postgresql.Driver</value>
+        <value>org.apache.derby.jdbc.EmbeddedDriver</value>
     </property>
     <property>
         <name>javax.jdo.option.ConnectionURL</name>
-        <value>jdbc:postgresql://localhost:5432/metastore</value>
+        <value>jdbc:derby:;databaseName=metastore_db;create=true</value>
+    </property>
+    <property>
+        <name>datanucleus.autoCreateSchema</name>
+        <value>true</value>
+        <description>Automatically creates necessary schema on startup if it doesn't exist</description>
+    </property>
+    <property>
+        <name>datanucleus.autoCreateTables</name>
+        <value>true</value>
+        <description>Automatically creates necessary schema on startup if it doesn't exist</description>
     </property>
     <property>
         <name>javax.jdo.option.ConnectionUserName</name>
-        <value>hive</value>
+        <value>APP</value>
     </property>
     <property>
         <name>javax.jdo.option.ConnectionPassword</name>
-        <value>hive</value>
+        <value>mine</value>
     </property>
     <property>
         <name>hive.metastore.schema.verification</name>

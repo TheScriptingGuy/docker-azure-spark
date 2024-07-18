@@ -10,6 +10,9 @@ services:
         SPARK_VERSION: ${SPARK_VERSION}
         DELTA_VERSION: ${DELTA_VERSION}
         HADOOP_VERSION: ${HADOOP_VERSION}
+        HIVE_VERSION: ${HIVE_VERSION}
+        LIVY_VERSION: ${LIVY_VERSION}
+        DERBY_VERSION: ${DERBY_VERSION}
     user: root
     env_file:
       - .env

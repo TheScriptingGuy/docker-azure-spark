@@ -21,6 +21,8 @@ bash $HADOOP_PREFIX/etc/hadoop/mapred-env.sh
 bash $SPARK_HOME/conf/spark-env.sh
 echo $HADOOP_OPTS
 
+pip install -r /workspace/docker/run/requirements.txt
+
 su -c "/usr/lib/postgresql/15/bin/pg_ctl start -D /home/postgres/data &" postgres
 psql -U postgres -c "CREATE ROLE hive;"
 psql -U postgres -c "CREATE USER hive WITH PASSWORD 'hive';"

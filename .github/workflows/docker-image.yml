@@ -5,6 +5,7 @@ on:
     branches: [ main ]
     tags:
       - '*'
+  workflow_dispatch:
 
 jobs:
   build:
@@ -27,6 +28,12 @@ jobs:
         username: ${{ secrets.DOCKERHUB_USERNAME }}
         password: ${{ secrets.DOCKERHUB_TOKEN }}
 
+    - name: Load .env file
+      id: dotenv
+      uses: falti/dotenv-action@v2.1
+      with:
+        path: docker/build/.env
+
     - name: Build and push
       uses: docker/build-push-action@v2
       with:
@@ -34,7 +41,10 @@ jobs:
         push: true
         tags: portablespark/docker-azure-spark:${{ github.ref_name }}
         build-args: |
-          PYTHON_VERSION=${{ vars.PYTHON_VERSION }}
-          SPARK_VERSION=${{ vars.SPARK_VERSION }}
-          DELTA_VERSION=${{ vars.DELTA_VERSION }} 
-          HADOOP_VERSION=${{ vars.HADOOP_VERSION }}
+          PYTHON_VERSION=${{ env.PYTHON_VERSION }}
+          SPARK_VERSION=${{ env.SPARK_VERSION }}
+          DELTA_VERSION=${{ env.DELTA_VERSION }}
+          HADOOP_VERSION=${{ env.HADOOP_VERSION }}
+          HIVE_VERSION=${{ env.HIVE_VERSION }}
+          LIVY_VERSION=${{ env.LIVY_VERSION }}
+          DERBY_VERSION=${{ env.DERBY_VERSION }}
