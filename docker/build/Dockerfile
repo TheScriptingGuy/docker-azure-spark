@@ -75,7 +75,7 @@ RUN cp -p "${SPARK_HOME}/conf/spark-defaults.conf.template" "${SPARK_HOME}/conf/
 
 RUN if [ -n "$HIVE_VERSION" ]; then \
         wget  --verbose "https://archive.apache.org/dist/hive/hive-${HIVE_VERSION}/apache-hive-${HIVE_VERSION}-bin.tar.gz" -O /tmp/hive.tar.gz && \
-        tar -xf /tmp/hive.tar.gz -C /opt/hive && \
+        tar -xf /tmp/hive.tar.gz -C /opt/hive --strip-components=1 && \
         rm /tmp/hive.tar.gz; \
     fi
 
