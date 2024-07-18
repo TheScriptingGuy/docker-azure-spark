@@ -33,7 +33,9 @@ jobs:
       uses: falti/dotenv-action@v1.1.2
       with:
         path: docker/build/.env
-
+        log-variables: true
+        export-variables: true
+        
     - name: Build and push
       uses: docker/build-push-action@v2
       with:
