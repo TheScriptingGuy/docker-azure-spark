@@ -36,7 +36,7 @@ jobs:
       id: dotenv
       uses: falti/dotenv-action@v1.1.2
       with:
-        path: docker/build/${{ inputs.spark_version }}/.env
+        path: docker/build/versions/${{ inputs.spark_version }}/.env
         log-variables: true
         export-variables: true
 
