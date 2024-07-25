@@ -21,7 +21,6 @@ azure-storage-blob==12.19.1
 azure-storage-file-datalake==12.14.0
 bcrypt==4.1.2
 beautifulsoup4==4.12.3
-pycairo
 bleach==6.1.0
 blinker==1.7.0
 boltons==24.0.0
