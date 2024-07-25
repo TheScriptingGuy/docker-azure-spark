@@ -189,6 +189,7 @@ pandasql==0.7.3
 pandocfilters==1.5.0
 paramiko==3.3.1
 parso==0.8.3
+pycairo
 pathos==0.3.1
 pathtools==0.1.2
 patsy==0.5.3
