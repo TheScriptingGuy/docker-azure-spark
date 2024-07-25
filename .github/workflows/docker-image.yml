@@ -1,11 +1,12 @@
 name: Build and push Docker image
 
 on:
-  push:
-    branches: [ main ]
-    tags:
-      - '*'
   workflow_dispatch:
+    inputs:
+    spark_version:
+      description: 'Spark version to use'
+      required: true
+      default: '3.5.0'
 
 jobs:
   build:
@@ -32,7 +33,7 @@ jobs:
       id: dotenv
       uses: falti/dotenv-action@v1.1.2
       with:
-        path: docker/build/.env
+        path: docker/build/${{ inputs.spark_version }}/.env
         log-variables: true
         export-variables: true
 
