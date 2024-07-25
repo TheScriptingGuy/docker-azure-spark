@@ -1,5 +1,11 @@
 name: Build and push Docker image
 
+inputs:
+  spark_version:
+    description: 'Spark version to use'
+    required: true
+    default: '3.5.0'
+
 on:
   workflow_dispatch:
     inputs:
