@@ -23,7 +23,7 @@ ARG DERBY_VERSION
 COPY --from=java-jre $JAVA_HOME $JAVA_HOME
 
 # Install dependencies and cleanup in a single layer
-RUN apt-get update && apt-get -y upgrade && apt-get -y install tree sudo libkrb5-dev build-essential wget curl unzip \
+RUN apt-get update && apt-get -y upgrade && apt-get -y install tree sudo libkrb5-dev pkg-config libcairo2-dev build-essential wget curl unzip \
     && python -m pip install --upgrade pip \
     && pip install --no-cache-dir pipenv \
     && rm -rf /var/lib/apt/lists/*
