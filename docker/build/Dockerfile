@@ -237,7 +237,7 @@ HEALTHCHECK CMD curl -f "http://host.docker.internal:${LIVY_PORT}/" || exit 1
 # Handle Python dependencies
 ADD versions/${SPARK_VERSION}/fabric_requirements.txt /tmp/
 ADD versions/${SPARK_VERSION}/app_requirements.txt /tmp/
-RUN pip install -r /tmp/fabric_requirements.txt && rm /tmp/fabric_requirements.txt
+RUN pip install --no-deps -r /tmp/fabric_requirements.txt && rm /tmp/fabric_requirements.txt
 RUN pip install -r /tmp/app_requirements.txt && rm /tmp/app_requirements.txt
 
 #Install Spark dependencies by running Spark once
