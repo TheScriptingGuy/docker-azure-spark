@@ -28,10 +28,6 @@ RUN apt-get update && apt-get -y upgrade && apt-get -y install tree sudo libkrb5
     && pip install --no-cache-dir pipenv \
     && rm -rf /var/lib/apt/lists/*
 
-# Handle Python dependencies
-ADD requirements.txt /tmp/
-RUN pip install -r /tmp/requirements.txt && rm /tmp/requirements.txt
-
 # Set Home Directories
 ENV SPARK_HOME="/opt/spark"
 ENV HIVE_HOME="/opt/hive"
@@ -207,7 +203,7 @@ ENV DERBY_HOME /opt/derby \
     PATH $PATH:$DERBY_HOME/bin
 
 # Download and install Derby
-RUN wget --verbose "http://apache.mirrors.pair.com/db/derby/db-derby-$DERBY_VERSION/db-derby-$DERBY_VERSION-bin.tar.gz" -O /tmp/derby.tar.gz \
+RUN wget --verbose "https://archive.apache.org/dist/db/derby/db-derby-$DERBY_VERSION/db-derby-$DERBY_VERSION-bin.tar.gz" -O /tmp/derby.tar.gz \
     && mkdir -p "$DERBY_HOME" \
     && tar -xzf /tmp/derby.tar.gz -C "$DERBY_HOME" --strip-components=1 \
     && rm /tmp/derby.tar.gz
@@ -238,8 +234,11 @@ HEALTHCHECK CMD curl -f "http://host.docker.internal:${LIVY_PORT}/" || exit 1
 # Install Python & Spark dependencies
 ###########################################
 
-# Install pyspark and delta-spark using pip
-RUN pip install --no-cache-dir pyspark==${SPARK_VERSION} delta-spark==$DELTA_VERSION ipykernel
+# Handle Python dependencies
+ADD versions/${SPARK_VERSION}/fabric_requirements.txt /tmp/
+ADD versions/${SPARK_VERSION}/app_requirements.txt /tmp/
+RUN pip install -r /tmp/fabric_requirements.txt && rm /tmp/fabric_requirements.txt
+RUN pip install -r /tmp/app_requirements.txt && rm /tmp/app_requirements.txt
 
 #Install Spark dependencies by running Spark once
 RUN python -c "from pyspark.sql import SparkSession; spark = SparkSession.builder.getOrCreate(); spark.stop()"  && python -m spylon_kernel install
