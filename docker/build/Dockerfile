@@ -3,6 +3,42 @@ ARG JAVA_VERSION
 FROM eclipse-temurin:${JAVA_VERSION}-jre as java-jre
 ARG PYTHON_VERSION
 ARG JAVA_VERSION
+FROM python:${PYTHON_VERSION}-slim AS builder
+ENV build_dir = "/usr/local/lib/${PYTHON_VERSION}/site-packages"
+ARG LIVY_VERSION
+ARG SPARK_VERSION
+# Install dependencies and cleanup in a single layer
+RUN apt-get update && apt-get -y upgrade && apt-get -y install tree libkrb5-dev pkg-config libmpfr-dev libgmp-dev libmpc-dev libgirepository1.0-dev libcairo2-dev build-essential wget curl unzip \
+    && python -m pip install --upgrade pip \
+    && pip install --no-cache-dir pipenv \
+    && rm -rf /var/lib/apt/lists/*
+
+# Handle Python dependencies
+ADD versions/${SPARK_VERSION}/fabric_requirements.txt /tmp/
+ADD versions/${SPARK_VERSION}/app_requirements.txt /tmp/
+RUN pip install --no-deps -r /tmp/fabric_requirements.txt && rm /tmp/fabric_requirements.txt
+RUN pip install -r /tmp/app_requirements.txt && rm /tmp/app_requirements.txt
+
+###########################################
+# Install Apache Livy
+###########################################
+
+#Set Livy variables
+ENV LIVY_PORT=8998 \
+    LIVY_HOME=/opt/livy \
+    LIVY_CONF_DIR="${LIVY_HOME}/conf"
+
+RUN curl --progress-bar -L --retry 3 \
+    "https://archive.apache.org/dist/incubator/livy/${LIVY_VERSION}/apache-livy-${LIVY_VERSION}_2.12-bin.zip" \
+    -o "/tmp/apache-livy-${LIVY_VERSION}_2.12-bin.zip" \
+  && unzip -qq "/tmp/apache-livy-${LIVY_VERSION}_2.12-bin.zip" -d /tmp/ \
+  && mv /tmp/apache-livy-${LIVY_VERSION}_2.12-bin ${LIVY_HOME} \
+  && rm "/tmp/apache-livy-${LIVY_VERSION}_2.12-bin.zip" \
+  && mkdir "${LIVY_HOME}/logs" \
+  && chown -R root:root "${LIVY_HOME}"
+
+COPY livy/conf/livy.conf /usr/livy/conf/livy.conf
+
 FROM python:${PYTHON_VERSION}-slim AS base
 
 ARG JAVA_VERSION
@@ -21,23 +57,25 @@ ARG HADOOP_VERSION
 ARG HIVE_VERSION
 ARG LIVY_VERSION
 ARG DERBY_VERSION
-
+#pip show PyPika
+# Copy the Python dependencies from the build image
+COPY --from=builder $BUILD_DIR $BUILD_DIR
+COPY --from=builder /usr/local/bin /usr/local/bin
+# Copy the Apache Livy from the build image
+COPY --from=builder $LIVY_HOME $LIVY_HOME
 # Copy the Java Runtime Environment (JRE) from the eclipse-temurin image
 COPY --from=java-jre $JAVA_HOME $JAVA_HOME
-
-# Install dependencies and cleanup in a single layer
-RUN apt-get update && apt-get -y upgrade && apt-get -y install tree sudo libkrb5-dev pkg-config libmpfr-dev libgmp-dev libmpc-dev libgirepository1.0-dev libcairo2-dev build-essential wget curl unzip \
-    && python -m pip install --upgrade pip \
-    && pip install --no-cache-dir pipenv \
-    && rm -rf /var/lib/apt/lists/*
-
 # Set Home Directories
 ENV SPARK_HOME="/opt/spark"
 ENV HIVE_HOME="/opt/hive"
 ENV HADOOP_HOME="/opt/hadoop"
+# Set environment variables
+ENV PYSPARK_PYTHON=/usr/bin/python${PYTHON_VERSION}
+ENV PYSPARK_DRIVER_PYTHON=/usr/bin/python${PYTHON_VERSION}
 
 #mkdir
 RUN mkdir -p $SPARK_HOME && mkdir -p $HADOOP_HOME && mkdir -p $HIVE_HOME
+
 
 #############################################
 # install spark
@@ -141,7 +179,7 @@ RUN mkdir $HADOOP_PREFIX/input && \
      cp $HADOOP_PREFIX/etc/hadoop/*.xml $HADOOP_PREFIX/input
 
 # Install ssh and supervisor, setup SSH keys, and configure known hosts in one RUN command
-RUN apt-get update && apt-get install -y ssh supervisor && \
+RUN apt-get update && apt-get install -y ssh supervisor sudo && \
     mkdir /var/run/sshd && \
     ssh-keygen -t rsa -P '' -f ~/.ssh/id_rsa && \
     cat ~/.ssh/id_rsa.pub >> ~/.ssh/authorized_keys && \
@@ -211,37 +249,12 @@ RUN wget --verbose "https://archive.apache.org/dist/db/derby/db-derby-$DERBY_VER
     && tar -xzf /tmp/derby.tar.gz -C "$DERBY_HOME" --strip-components=1 \
     && rm /tmp/derby.tar.gz
 
-###########################################
-# Install Apache Livy
-###########################################
-
-#Set Livy variables
-ENV LIVY_PORT=8998 \
-    LIVY_HOME=/opt/livy \
-    LIVY_CONF_DIR="${LIVY_HOME}/conf"
-
-RUN curl --progress-bar -L --retry 3 \
-    "https://archive.apache.org/dist/incubator/livy/${LIVY_VERSION}/apache-livy-${LIVY_VERSION}_2.12-bin.zip" \
-    -o "/tmp/apache-livy-${LIVY_VERSION}_2.12-bin.zip" \
-  && unzip -qq "/tmp/apache-livy-${LIVY_VERSION}_2.12-bin.zip" -d /tmp/ \
-  && mv /tmp/apache-livy-${LIVY_VERSION}_2.12-bin ${LIVY_HOME} \
-  && rm "/tmp/apache-livy-${LIVY_VERSION}_2.12-bin.zip" \
-  && mkdir "${LIVY_HOME}/logs" \
-  && chown -R root:root "${LIVY_HOME}"
-
-COPY livy/conf/livy.conf /usr/livy/conf/livy.conf
 
 HEALTHCHECK CMD curl -f "http://host.docker.internal:${LIVY_PORT}/" || exit 1
 
 ###########################################
 # Install Python & Spark dependencies
 ###########################################
-
-# Handle Python dependencies
-ADD versions/${SPARK_VERSION}/fabric_requirements.txt /tmp/
-ADD versions/${SPARK_VERSION}/app_requirements.txt /tmp/
-RUN pip install --no-deps -r /tmp/fabric_requirements.txt && rm /tmp/fabric_requirements.txt
-RUN pip install -r /tmp/app_requirements.txt && rm /tmp/app_requirements.txt
 
 #Install Spark dependencies by running Spark once
 RUN python -c "from pyspark.sql import SparkSession; spark = SparkSession.builder.getOrCreate(); spark.stop()"  && python -m spylon_kernel install
