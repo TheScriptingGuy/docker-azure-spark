@@ -21,19 +21,9 @@ bash $HADOOP_PREFIX/etc/hadoop/mapred-env.sh
 bash $SPARK_HOME/conf/spark-env.sh
 echo $HADOOP_OPTS
 
-pip install -r /workspace/docker/run/requirements.txt
+pip install -r /requirements.txt
 
-su -c "/usr/lib/postgresql/15/bin/pg_ctl start -D /home/postgres/data &" postgres
-psql -U postgres -c "CREATE ROLE hive;"
-psql -U postgres -c "CREATE USER hive WITH PASSWORD 'hive';"
-psql -U postgres -c "GRANT postgres TO hive;"
-psql -U postgres -c "CREATE DATABASE metastore;"
-psql -U postgres -c "GRANT ALL PRIVILEGES ON DATABASE metastore TO hive;"
-psql -U postgres -c "ALTER ROLE hive WITH LOGIN PASSWORD 'hive';"
-psql -U postgres -c "GRANT ALL PRIVILEGES ON SCHEMA public TO hive;"
-psql -U postgres -c "ALTER SCHEMA public OWNER TO postgres;"
-psql -U postgres -c "GRANT USAGE, CREATE ON SCHEMA public TO hive;"
-psql -U postgres -c "GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO hive;"
+nohup jupyter notebook --allow-root --NotebookApp.allow_origin='*' --NotebookApp.password='' --NotebookApp.token='' &
 
 #loop through Azure Storage Accounts JSON Array and add the values in the HADOOP Config files
 echo $AZURE_STORAGE_ACCOUNTS | jq -c '.[]' | while read i; do \
@@ -65,12 +55,10 @@ export YARN_CONF_DIR=$HADOOP_PREFIX/etc
 mkdir -p /tmp/spark/data
 mkdir -p /tmp/hadoop/hdfs/tmp
 
-
-
 if [ ! -f "$NAMEDIR"/initialized ]; then
   echo "Configuring Hive..."
   hdfs dfs -mkdir -p  /user/hive/warehouse
-  schematool -dbType postgres -initSchema
+  schematool -dbType derby -initSchema
   touch "$NAMEDIR"/initialized
 fi
 
@@ -80,7 +68,7 @@ hive --service metastore > /home/root/hive-metastore.log 2>&1 &
 echo "Starting Hive server2..."
 hiveserver2 > /home/root/hive-server.log 2>&1 &
 # Start Jupyter Notebook without a password
-bash jupyter notebook --allow-root --NotebookApp.allow_origin='*' --NotebookApp.password='' --NotebookApp.token='' &
+
 $LIVY_HOME/bin/livy-server &
 # start ssh
 /usr/sbin/sshd  &
@@ -88,6 +76,5 @@ $LIVY_HOME/bin/livy-server &
 bash $HADOOP_PREFIX/sbin/start-all.sh  &
 
 bash $SPARK_HOME/sbin/start-all.sh  &
-
 
 sleep infinity

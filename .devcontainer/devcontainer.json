@@ -3,7 +3,7 @@
 {
   "name": "Python with Pyspark and Delta Lake",
   "dockerComposeFile": "../docker/run/docker-compose.yml",
-  "service": "delta-spark",
+  "service": "delta-spark-run",
   "workspaceFolder": "/workspace",
   // Configure tool-specific properties.
   "customizations": {
