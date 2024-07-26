@@ -21,9 +21,9 @@ ARG DERBY_VERSION
 # Handle Python dependencies
 ADD versions/${SPARK_VERSION}/fabric_requirements.txt /tmp/
 ADD versions/${SPARK_VERSION}/app_requirements.txt /tmp/
-COPY ./artifacts/python-packages /tmp
-RUN pip install --no-deps --no-index --find-links=/tmp/python-packages -r /tmp/fabric_requirements.txt
-RUN pip install --no-index --find-links=/tmp/python-packages -r /tmp/app_requirements.txt
+COPY ./artifacts/ /tmp
+RUN pip install --no-deps --no-index --find-links=/tmp/python-packages-fabric -r /tmp/fabric_requirements.txt
+RUN pip install --no-index --find-links=/tmp/python-packages-app -r /tmp/app_requirements.txt
 # # Copy the Python dependencies from the build image
 COPY ./artifacts/python-packages /usr/local/python${PYTHON_VERSION}/site-packages
 COPY ./artifacts/bin /usr/local/bin

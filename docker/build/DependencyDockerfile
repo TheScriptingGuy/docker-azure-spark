@@ -14,13 +14,13 @@ RUN apt-get update && apt-get -y upgrade && apt-get -y install tree libkrb5-dev 
     && python -m pip install --upgrade pip \
     && rm -rf /var/lib/apt/lists/*
 
-RUN mkdir /artifacts && mkdir /artifacts/python-packages
+RUN mkdir /artifacts && mkdir /artifacts/python-packages-fabric && mkdir /artifacts/python-packages-app
 
 # Handle Python dependencies
 ADD versions/${SPARK_VERSION}/fabric_requirements.txt /tmp/
 ADD versions/${SPARK_VERSION}/app_requirements.txt /tmp/
-RUN pip download --no-deps -r /tmp/fabric_requirements.txt && rm /tmp/fabric_requirements.txt -d /artifacts/python-packages
-RUN pip download -r /tmp/app_requirements.txt && rm /tmp/app_requirements.txt  -d /artifacts/python-packages
+RUN pip download --no-deps -r /tmp/fabric_requirements.txt && rm /tmp/fabric_requirements.txt -d /artifacts/python-packages-fabric
+RUN pip download -r /tmp/app_requirements.txt && rm /tmp/app_requirements.txt  -d /artifacts/python-packages-app
 
 ###########################################
 # Install Apache Livy

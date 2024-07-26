@@ -55,6 +55,12 @@ jobs:
           mkdir -p ./artifacts && \
           docker cp dependencies:/artifacts ./artifacts
 
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v2
+      with:
+        name: build-artifacts
+        path: ./artifacts
+
   use-artifacts:
     runs-on: ubuntu-latest
     needs: build
