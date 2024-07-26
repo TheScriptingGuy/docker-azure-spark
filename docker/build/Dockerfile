@@ -1,5 +1,5 @@
 ARG PYTHON_VERSION
-FROM dependencies:latest AS dependencies
+#FROM dependencies:latest AS dependencies
 ARG PYTHON_VERSION
 FROM python:${PYTHON_VERSION}-slim AS base
 ARG PYTHON_VERSION
@@ -30,10 +30,10 @@ COPY ./artifacts /tmp/
 # COPY ./artifacts/include.tar.gz /tmp/
 # COPY ./artifacts/java /tmp/java
 
-COPY --from=dependencies /artifacts /tmp
+#COPY --from=dependencies /artifacts /tmp
 
 # Extract the tar archives
-RUN tar -xzf /tmp/python-packages.tar.gz -C /usr/local/lib/python${PYTHON_VERSION}/site-packages && \
+RUN tar -xzf /tmp/python-packages.tar.gz -C /usr/local/lib/python3.10 && \
     tar -xzf /tmp/bin.tar.gz -C /usr/local/ && \
     tar -xzf /tmp/livy.tar.gz -C /opt/ && \
     tar -xzf /tmp/share.tar.gz -C /usr/local/ && \
