@@ -51,6 +51,30 @@ jobs:
         log-variables: true
         export-variables: true
 
+    - name: Build Docker image with context
+      run: docker build -t dependencies:latest -f docker/build/DependencyDockerfile .
+
+
+    - name: Create container from image
+      run: docker create --name dependencies dependencies:latest
+
+    - name: Copy artifacts from container
+      run: docker cp dependencies:/path/to/artifacts ./artifacts
+
+  use-artifacts:
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Download artifacts
+      uses: actions/download-artifact@v2
+      with:
+        name: build-artifacts
+        path: ./artifacts
+
     - name: Build and push
       uses: docker/build-push-action@v2
       with:
@@ -66,3 +90,4 @@ jobs:
           LIVY_VERSION=${{ steps.dotenv.outputs.livy_version }}
           DERBY_VERSION=${{ steps.dotenv.outputs.derby_version }}
           JAVA_VERSION=${{ steps.dotenv.outputs.java_version }}
+          ARTIFACTS_PATH=./artifacts 
