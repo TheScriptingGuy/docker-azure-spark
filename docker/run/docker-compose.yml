@@ -2,18 +2,16 @@ version: '3'
 
 services:
   delta-spark-run:
-    image: portablespark/docker-azure-spark:3.5.0_1.0.1
+    image: portablespark/docker-azure-spark:3.4.3_1.0.1
     user: root
     entrypoint: /bootstrap.sh
     env_file:
       - .env
-    # ports:
-    #   - "8080:8080" # Spark Master UI
-    #   - "7077:7077" # Spark Master
-    #   - "8081:8081" # Spark Worker UI
-    #   - "9083:9083" # Hive
-    #   - "5432:5432" # Postgres
     ports:
+      - "8080:8080" # Spark Master UI
+      - "7077:7077" # Spark Master
+      - "8081:8081" # Spark Worker UI
+      - "9083:9083" # Hive
       - "8888:8888" # Jupyter
     volumes:
       - ../..:/workspace:cached
