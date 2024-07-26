@@ -1,6 +1,8 @@
 jupyter
 findspark
 behave
+pyspark==3.3.4
+delta-spark==2.2.0
 allure-behave
 spylon-kernel
 notebook==6.5.6
