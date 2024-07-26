@@ -1,4 +1,6 @@
 ARG PYTHON_VERSION
+FROM dependencies:latest AS dependencies
+ARG PYTHON_VERSION
 FROM python:${PYTHON_VERSION}-slim AS base
 ARG PYTHON_VERSION
 ARG JAVA_VERSION
@@ -18,17 +20,18 @@ ARG HIVE_VERSION
 ARG LIVY_VERSION
 ARG DERBY_VERSION
 
-# Handle Python dependencies
-ADD versions/${SPARK_VERSION}/fabric_requirements.txt /tmp/
-ADD versions/${SPARK_VERSION}/app_requirements.txt /tmp/
 COPY ./artifacts/ /tmp
-RUN pip install --no-deps --no-index --find-links=/tmp/python-packages-fabric -r /tmp/fabric_requirements.txt
-RUN pip install --no-index --find-links=/tmp/python-packages-app -r /tmp/app_requirements.txt
-# # Copy the Python dependencies from the build image
-COPY ./artifacts/python-packages /usr/local/python${PYTHON_VERSION}/site-packages
-COPY ./artifacts/bin /usr/local/bin
-COPY ./artifacts/java $JAVA_HOME
-COPY ./artifacts/livy /opt/livy
+
+# COPY --from=dependencies /artifacts/python-packages /usr/local/lib/${PYTHON_VERSION}/site-packages
+# COPY --from=dependencies /artifacts/bin /usr/local/bin
+# COPY --from=dependencies /artifacts/share /usr/local/share
+# COPY --from=dependencies /artifacts/include /usr/local/include
+# COPY --from=dependencies /artifacts/livy /opt/livy
+# COPY --from=dependencies /artifacts/java $JAVA_HOME
+
+
+# RUN pip install --no-deps --no-index --find-links=/tmp/python-packages-fabric -r /tmp/fabric_requirements.txt
+# RUN pip install --no-index --find-links=/tmp/python-packages-app -r /tmp/app_requirements.txt
 
 # Set Home Directories
 ENV SPARK_HOME="/opt/spark"

@@ -14,13 +14,13 @@ RUN apt-get update && apt-get -y upgrade && apt-get -y install tree libkrb5-dev 
     && python -m pip install --upgrade pip \
     && rm -rf /var/lib/apt/lists/*
 
-RUN mkdir /artifacts && mkdir /artifacts/python-packages-fabric && mkdir /artifacts/python-packages-app
+RUN mkdir /artifacts && mkdir /artifacts/bin && mkdir /artifacts/python-packages && mkdir /artifacts/livy && mkdir /artifacts/java && mkdir /artifacts/include && mkdir /artifacts/share
 
 # Handle Python dependencies
 ADD versions/${SPARK_VERSION}/fabric_requirements.txt /tmp/
 ADD versions/${SPARK_VERSION}/app_requirements.txt /tmp/
-RUN pip download --no-deps -r /tmp/fabric_requirements.txt  -d /artifacts/python-packages-fabric && rm /tmp/fabric_requirements.txt
-RUN pip download -r /tmp/app_requirements.txt -d /artifacts/python-packages-app && rm /tmp/app_requirements.txt 
+RUN pip install --no-deps -r /tmp/fabric_requirements.txt && rm /tmp/fabric_requirements.txt
+RUN pip install -r /tmp/app_requirements.txt && rm /tmp/app_requirements.txt 
 
 ###########################################
 # Install Apache Livy
@@ -46,7 +46,10 @@ COPY livy/conf/livy.conf /usr/livy/conf/livy.conf
 ENV JAVA_HOME=/opt/java/openjdk \
     PATH="${JAVA_HOME}/bin:${PATH}"
 
+RUN mv /usr/local/lib/${PYTHON_VERSION}/site-packages /artifacts/python-packages
 RUN mv /usr/local/bin /artifacts/bin
+RUN mv /usr/local/include /artifacts/include
+RUN mv /usr/local/share /artifacts/share
 RUN mv $LIVY_HOME /artifacts/livy
 # Copy the Java Runtime Environment (JRE) from the eclipse-temurin image
 COPY --from=java-jre $JAVA_HOME /artifacts/java
