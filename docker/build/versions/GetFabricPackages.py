@@ -10,7 +10,7 @@ def package_exists_on_pypi(package_name, version):
     response = requests.get(url)
     return response.status_code == 200
 
-spark_version=3.5
+spark_version=3.3
 url = f"https://raw.githubusercontent.com/microsoft/synapse-spark-runtime/main/Fabric/spark{spark_version}/Components.json"
 subsystem = "fabricPython"
 
