@@ -52,6 +52,7 @@ jobs:
 
     - name: Copy artifacts from container
       run: |
+          mk dir -p ./artifacts && \
           docker cp dependencies:/opt/java/openjdk ./artifacts/java && \
           docker cp dependencies:/opt/livy ./artifacts/livy && \
           docker cp dependencies:/usr/local/bin ./artifacts/bin && \
