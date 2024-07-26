@@ -42,7 +42,9 @@ jobs:
         export-variables: true
 
     - name: Build Docker image with context
-      run: docker build -t dependencies:latest . -f docker/build/DependencyDockerfile --build-arg PYTHON_VERSION=${{ steps.dotenv.outputs.python_version }} --build-arg SPARK_VERSION=${{ steps.dotenv.outputs.spark_version }} --build-arg DELTA_VERSION=${{ steps.dotenv.outputs.delta_version }} --build-arg HADOOP_VERSION=${{ steps.dotenv.outputs.hadoop_version }} --build-arg HIVE_VERSION=${{ steps.dotenv.outputs.hive_version }} --build-arg LIVY_VERSION=${{ steps.dotenv.outputs.livy_version }} --build-arg DERBY_VERSION=${{ steps.dotenv.outputs.derby_version }} --build-arg JAVA_VERSION=${{ steps.dotenv.outputs.java_version }}
+      run: | 
+            cd docker/build && \
+            docker build -t dependencies:latest . -f ./DependencyDockerfile --build-arg PYTHON_VERSION=${{ steps.dotenv.outputs.python_version }} --build-arg SPARK_VERSION=${{ steps.dotenv.outputs.spark_version }} --build-arg DELTA_VERSION=${{ steps.dotenv.outputs.delta_version }} --build-arg HADOOP_VERSION=${{ steps.dotenv.outputs.hadoop_version }} --build-arg HIVE_VERSION=${{ steps.dotenv.outputs.hive_version }} --build-arg LIVY_VERSION=${{ steps.dotenv.outputs.livy_version }} --build-arg DERBY_VERSION=${{ steps.dotenv.outputs.derby_version }} --build-arg JAVA_VERSION=${{ steps.dotenv.outputs.java_version }}
 
 
     - name: Create container from image
