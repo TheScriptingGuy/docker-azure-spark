@@ -1,5 +1,5 @@
 ARG PYTHON_VERSION
-FROM dependencies:latest AS dependencies
+#FROM dependencies:latest AS dependencies
 ARG PYTHON_VERSION
 FROM python:${PYTHON_VERSION}-slim AS base
 ARG PYTHON_VERSION
@@ -26,10 +26,12 @@ COPY ./artifacts/ /tmp
 
 # Extract the tar archives
 RUN tar -xzf /tmp/python-packages.tar.gz -C /usr/local/lib/python${PYTHON_VERSION}/site-packages && \
-    tar -xzf /tmp/bin.tar.gz -C /usr/local/bin && \
-    tar -xzf /tmp/livy.tar.gz -C /opt/livy && \
-    tar -xzf /tmp/share.tar.gz -C /usr/local/share && \
-    tar -xzf /tmp/include.tar.gz -C /usr/local/include && \
+    tar -xzf /tmp/bin.tar.gz -C /usr/local/ && \
+    tar -xzf /tmp/livy.tar.gz -C /opt/ && \
+    tar -xzf /tmp/share.tar.gz -C /usr/local/ && \
+    tar -xzf /tmp/include.tar.gz -C /usr/local/ && \
+    mkdir /opt/java && \ 
+    mkdir /opt/java/openjdk && \
     mv /tmp/java $JAVA_HOME
 
 # Set Home Directories
