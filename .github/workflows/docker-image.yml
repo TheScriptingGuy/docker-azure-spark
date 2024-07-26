@@ -51,7 +51,11 @@ jobs:
       run: docker create --name dependencies dependencies:latest
 
     - name: Copy artifacts from container
-      run: docker cp dependencies:/path/to/artifacts ./artifacts
+      run: |
+          docker cp dependencies:/opt/java/openjdk ./artifacts/java && \
+          docker cp dependencies:/opt/livy ./artifacts/livy && \
+          docker cp dependencies:/usr/local/bin ./artifacts/bin && \
+          docker cp dependencies:"/usr/local/lib/${PYTHON_VERSION}/site-packages" ./artifacts/python/site-packages
 
   use-artifacts:
     runs-on: ubuntu-latest
