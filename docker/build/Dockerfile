@@ -58,14 +58,15 @@ ARG HADOOP_VERSION
 ARG HIVE_VERSION
 ARG LIVY_VERSION
 ARG DERBY_VERSION
+# Copy the Java Runtime Environment (JRE) from the eclipse-temurin image
+COPY --from=java-jre $JAVA_HOME $JAVA_HOME
 #pip show PyPika
 # Copy the Python dependencies from the build image
 COPY --from=builder $BUILD_DIR $BUILD_DIR
 COPY --from=builder /usr/local/bin /usr/local/bin
 # Copy the Apache Livy from the build image
 COPY --from=builder $LIVY_HOME $LIVY_HOME
-# Copy the Java Runtime Environment (JRE) from the eclipse-temurin image
-COPY --from=java-jre $JAVA_HOME $JAVA_HOME
+
 # Set Home Directories
 ENV SPARK_HOME="/opt/spark"
 ENV HIVE_HOME="/opt/hive"
