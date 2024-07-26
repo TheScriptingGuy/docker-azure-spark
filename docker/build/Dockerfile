@@ -22,13 +22,19 @@ ARG DERBY_VERSION
 
 COPY ./artifacts/ /tmp
 
-# COPY --from=dependencies /artifacts/python-packages /usr/local/lib/${PYTHON_VERSION}/site-packages
-# COPY --from=dependencies /artifacts/bin /usr/local/bin
-# COPY --from=dependencies /artifacts/share /usr/local/share
-# COPY --from=dependencies /artifacts/include /usr/local/include
-# COPY --from=dependencies /artifacts/livy /opt/livy
-# COPY --from=dependencies /artifacts/java $JAVA_HOME
+# COPY --from=dependencies /artifacts/python-packages /tmp/python-packages
+# COPY --from=dependencies /artifacts/bin /tmp/bin
+# COPY --from=dependencies /artifacts/share /tmp/share
+# COPY --from=dependencies /artifacts/include /tmp/include
+# COPY --from=dependencies /artifacts/livy /tmp/livy
+# COPY --from=dependencies /artifacts/java /tmp/java
 
+RUN mv /tmp/java $JAVA_HOME && \
+    mv /tmp/livy /opt/livy && \
+    mv /tmp/python-packages /usr/local/lib/${PYTHON_VERSION}/site-packages && \
+    mv /tmp/bin /usr/local/bin && \
+    mv /tmp/share /usr/local/share && \
+    mv /tmp/include /usr/local/include
 
 # RUN pip install --no-deps --no-index --find-links=/tmp/python-packages-fabric -r /tmp/fabric_requirements.txt
 # RUN pip install --no-index --find-links=/tmp/python-packages-app -r /tmp/app_requirements.txt
