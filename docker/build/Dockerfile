@@ -1,45 +1,4 @@
 ARG PYTHON_VERSION
-ARG JAVA_VERSION
-FROM eclipse-temurin:${JAVA_VERSION}-jre as java-jre
-ARG PYTHON_VERSION
-ARG JAVA_VERSION
-FROM python:${PYTHON_VERSION}-slim AS builder
-ENV build_dir = "/usr/local/lib/${PYTHON_VERSION}/site-packages"
-ARG PYTHON_VERSION
-ARG LIVY_VERSION
-ARG SPARK_VERSION
-# Install dependencies and cleanup in a single layer
-RUN apt-get update && apt-get -y upgrade && apt-get -y install tree libkrb5-dev pkg-config libmpfr-dev libgmp-dev libmpc-dev libgirepository1.0-dev libcairo2-dev build-essential wget curl unzip \
-    && python -m pip install --upgrade pip \
-    && pip install --no-cache-dir pipenv \
-    && rm -rf /var/lib/apt/lists/*
-
-# Handle Python dependencies
-ADD versions/${SPARK_VERSION}/fabric_requirements.txt /tmp/
-ADD versions/${SPARK_VERSION}/app_requirements.txt /tmp/
-RUN pip install --no-deps -r /tmp/fabric_requirements.txt && rm /tmp/fabric_requirements.txt
-RUN pip install -r /tmp/app_requirements.txt && rm /tmp/app_requirements.txt
-
-###########################################
-# Install Apache Livy
-###########################################
-
-#Set Livy variables
-ENV LIVY_PORT=8998 \
-    LIVY_HOME=/opt/livy \
-    LIVY_CONF_DIR="${LIVY_HOME}/conf"
-
-RUN curl --progress-bar -L --retry 3 \
-    "https://archive.apache.org/dist/incubator/livy/${LIVY_VERSION}/apache-livy-${LIVY_VERSION}_2.12-bin.zip" \
-    -o "/tmp/apache-livy-${LIVY_VERSION}_2.12-bin.zip" \
-  && unzip -qq "/tmp/apache-livy-${LIVY_VERSION}_2.12-bin.zip" -d /tmp/ \
-  && mv /tmp/apache-livy-${LIVY_VERSION}_2.12-bin ${LIVY_HOME} \
-  && rm "/tmp/apache-livy-${LIVY_VERSION}_2.12-bin.zip" \
-  && mkdir "${LIVY_HOME}/logs" \
-  && chown -R root:root "${LIVY_HOME}"
-
-COPY livy/conf/livy.conf /usr/livy/conf/livy.conf
-
 FROM python:${PYTHON_VERSION}-slim AS base
 
 ARG JAVA_VERSION
@@ -58,14 +17,12 @@ ARG HADOOP_VERSION
 ARG HIVE_VERSION
 ARG LIVY_VERSION
 ARG DERBY_VERSION
-# Copy the Java Runtime Environment (JRE) from the eclipse-temurin image
-COPY --from=java-jre $JAVA_HOME $JAVA_HOME
-#pip show PyPika
-# Copy the Python dependencies from the build image
-COPY --from=builder $BUILD_DIR $BUILD_DIR
-COPY --from=builder /usr/local/bin /usr/local/bin
-# Copy the Apache Livy from the build image
-COPY --from=builder $LIVY_HOME $LIVY_HOME
+
+# # Copy the Python dependencies from the build image
+COPY ./artifacts/python-packages /usr/local/python${PYTHON_VERSION}/site-packages
+COPY ./artifacts/bin /usr/local/bin
+COPY ./artifacts/java $JAVA_HOME
+COPY ./artifacts/livy /opt/livy
 
 # Set Home Directories
 ENV SPARK_HOME="/opt/spark"
@@ -74,7 +31,7 @@ ENV HADOOP_HOME="/opt/hadoop"
 # Set environment variables
 ENV PYSPARK_PYTHON=/usr/bin/python${PYTHON_VERSION}
 ENV PYSPARK_DRIVER_PYTHON=/usr/bin/python${PYTHON_VERSION}
-
+RUN apt-get update && apt-get install -y wget curl procps
 #mkdir
 RUN mkdir -p $SPARK_HOME && mkdir -p $HADOOP_HOME && mkdir -p $HIVE_HOME
 

@@ -1,10 +1,29 @@
 version: '3'
 
 services:
+  pythondependencies:
+    image: dependencies:latest 
+    build:
+      context: .
+      dockerfile: ./DependencyDockerfile
+      args:
+        PYTHON_VERSION: ${PYTHON_VERSION}
+        SPARK_VERSION: ${SPARK_VERSION}
+        DELTA_VERSION: ${DELTA_VERSION}
+        HADOOP_VERSION: ${HADOOP_VERSION}
+        HIVE_VERSION: ${HIVE_VERSION}
+        LIVY_VERSION: ${LIVY_VERSION}
+        DERBY_VERSION: ${DERBY_VERSION}
+        JAVA_VERSION: ${JAVA_VERSION}
+    user: root
+    volumes:
+      - ./artifacts:/artifacts
+    env_file:
+      - .env
   delta-spark:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: ./Dockerfile
       args:
         PYTHON_VERSION: ${PYTHON_VERSION}
         SPARK_VERSION: ${SPARK_VERSION}
@@ -17,6 +36,8 @@ services:
     user: root
     env_file:
       - .env
+    depends_on:
+      - pythondependencies
     ports:
       - "8080:8080" # Spark Master UI
       - "7077:7077" # Spark Master
@@ -25,3 +46,4 @@ services:
       - "5432:5432" # Postgres
     volumes:
       - ../..:/workspace:cached
+      - ./artifacts:/artifacts:ro
