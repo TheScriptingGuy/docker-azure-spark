@@ -5,6 +5,7 @@ ARG PYTHON_VERSION
 ARG JAVA_VERSION
 FROM python:${PYTHON_VERSION}-slim AS builder
 ENV build_dir = "/usr/local/lib/${PYTHON_VERSION}/site-packages"
+ARG PYTHON_VERSION
 ARG LIVY_VERSION
 ARG SPARK_VERSION
 # Install dependencies and cleanup in a single layer
