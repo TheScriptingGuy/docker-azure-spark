@@ -114,7 +114,6 @@ keras==2.11.0
 keras-preprocessing==1.1.2
 kiwisolver==1.4.4
 knack==0.10.1
-lerc==4.0.0
 liac-arff==2.5.0
 lightgbm==3.3.3
 lime==0.2.0.1
