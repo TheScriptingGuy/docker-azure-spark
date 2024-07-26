@@ -26,10 +26,6 @@ azure-storage-blob==12.15.0
 azure-storage-file-datalake==12.9.1
 azureml-core==1.49.0
 backcall==0.2.0
-backports==1.0
-backports-tempfile==1.0
-backports-weakref==1.0.post1
-backports.functools_lru_cache==1.6.4
 bcrypt==3.2.2
 beautifulsoup4==4.11.2
 bleach==6.0.0
