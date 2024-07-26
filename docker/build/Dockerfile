@@ -20,7 +20,7 @@ ARG HIVE_VERSION
 ARG LIVY_VERSION
 ARG DERBY_VERSION
 
-COPY ./artifacts/ /tmp
+COPY ./artifacts /tmp
 
 #COPY --from=dependencies /artifacts /tmp
 
