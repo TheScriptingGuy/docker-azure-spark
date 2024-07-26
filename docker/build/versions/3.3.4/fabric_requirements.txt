@@ -204,7 +204,6 @@ rfc3986-validator==0.1.1
 rsa==4.9
 ruamel.yaml==0.17.21
 ruamel.yaml.clib==0.2.7
-ruamel_yaml==0.15.80
 salib==1.4.7
 scikit-learn==1.2.0
 scipy==1.10.1
@@ -243,7 +242,6 @@ traitlets==5.9.0
 treeinterpreter==0.2.2
 typed-ast==1.4.3
 typing-extensions==4.5.0
-typing_extensions==4.5.0
 unicodedata2==15.0.0
 urllib3==1.26.14
 virtualenv==20.19.0
