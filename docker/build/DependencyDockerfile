@@ -50,7 +50,7 @@ RUN tar -czf /artifacts/python-packages.tar.gz -C /usr/local/lib/python${PYTHON_
 RUN tar -czf /artifacts/bin.tar.gz -C /usr/local bin
 RUN tar -czf /artifacts/include.tar.gz -C /usr/local include
 RUN tar -czf /artifacts/share.tar.gz -C /usr/local share 
-RUN tar -czf /artifacts/livy.tar.gz -C $LIVY_HOME
+RUN tar -czf /artifacts/livy.tar.gz -C /opt livy
 # Copy the Java Runtime Environment (JRE) from the eclipse-temurin image
 COPY --from=java-jre $JAVA_HOME /artifacts/java
 
