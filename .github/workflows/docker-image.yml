@@ -42,15 +42,7 @@ jobs:
         export-variables: true
 
     - name: Build Docker image with context
-      run: docker buildx build -t dependencies:latest -f docker/build/DependencyDockerfile . \
-            --build-arg PYTHON_VERSION=3.11 \
-            --build-arg SPARK_VERSION=3.5.0 \
-            --build-arg DELTA_VERSION=3.1.0 \
-            --build-arg HADOOP_VERSION=3.3.4 \
-            --build-arg HIVE_VERSION=3.1.2 \
-            --build-arg LIVY_VERSION=0.8.0-incubating \
-            --build-arg DERBY_VERSION=10.15.2.0 \
-            --build-arg JAVA_VERSION=11.0.13
+      run: docker build -t dependencies:latest  . -f ./DependencyDockerfile --build-arg PYTHON_VERSION=3.11 --build-arg SPARK_VERSION=3.5.0 --build-arg DELTA_VERSION=3.1.0 --build-arg HADOOP_VERSION=3.3.4 --build-arg HIVE_VERSION=3.1.2 --build-arg LIVY_VERSION=0.8.0-incubating --build-arg DERBY_VERSION=10.15.2.0 --build-arg JAVA_VERSION=11.0.13
 
 
     - name: Create container from image
