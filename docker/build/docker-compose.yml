@@ -20,6 +20,7 @@ services:
       - ./artifacts:/artifacts
     env_file:
       - .env
+
   delta-spark:
     build:
       context: .
@@ -46,4 +47,3 @@ services:
       - "5432:5432" # Postgres
     volumes:
       - ../..:/workspace:cached
-      - ./artifacts:/artifacts:ro

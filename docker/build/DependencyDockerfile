@@ -19,8 +19,8 @@ RUN mkdir /artifacts && mkdir /artifacts/python-packages-fabric && mkdir /artifa
 # Handle Python dependencies
 ADD versions/${SPARK_VERSION}/fabric_requirements.txt /tmp/
 ADD versions/${SPARK_VERSION}/app_requirements.txt /tmp/
-RUN pip download --no-deps -r /tmp/fabric_requirements.txt && rm /tmp/fabric_requirements.txt -d /artifacts/python-packages-fabric
-RUN pip download -r /tmp/app_requirements.txt && rm /tmp/app_requirements.txt  -d /artifacts/python-packages-app
+RUN pip download --no-deps -r /tmp/fabric_requirements.txt  -d /artifacts/python-packages-fabric && rm /tmp/fabric_requirements.txt
+RUN pip download -r /tmp/app_requirements.txt -d /artifacts/python-packages-app && rm /tmp/app_requirements.txt 
 
 ###########################################
 # Install Apache Livy
@@ -53,4 +53,4 @@ COPY --from=java-jre $JAVA_HOME /artifacts/java
 
 
 # Add an entrypoint to keep the container running
-ENTRYPOINT ["tail", "-f", "/dev/null
+ENTRYPOINT ["tail", "-f", "/dev/null"]
