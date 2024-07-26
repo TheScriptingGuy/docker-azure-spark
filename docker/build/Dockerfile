@@ -29,12 +29,13 @@ COPY ./artifacts/ /tmp
 # COPY --from=dependencies /artifacts/livy /tmp/livy
 # COPY --from=dependencies /artifacts/java /tmp/java
 
-RUN mv /tmp/java $JAVA_HOME && \
-    mv /tmp/livy /opt/livy && \
-    mv /tmp/python-packages /usr/local/lib/${PYTHON_VERSION}/site-packages && \
-    mv /tmp/bin /usr/local/bin && \
-    mv /tmp/share /usr/local/share && \
-    mv /tmp/include /usr/local/include
+# Extract the tar archives
+RUN tar -xzf /tmp/python-packages.tar.gz -C /usr/local/lib/python${PYTHON_VERSION}/site-packages && \
+    tar -xzf /tmp/bin.tar.gz -C /usr/local/bin && \
+    tar -xzf /tmp/livy.tar.gz -C /opt/livy && \
+    tar -xzf /tmp/share.tar.gz -C /usr/local/share && \
+    tar -xzf /tmp/include.tar.gz -C /usr/local/include && \
+    mv /tmp/java $JAVA_HOME
 
 # RUN pip install --no-deps --no-index --find-links=/tmp/python-packages-fabric -r /tmp/fabric_requirements.txt
 # RUN pip install --no-index --find-links=/tmp/python-packages-app -r /tmp/app_requirements.txt
