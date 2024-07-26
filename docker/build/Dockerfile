@@ -22,12 +22,7 @@ ARG DERBY_VERSION
 
 COPY ./artifacts/ /tmp
 
-# COPY --from=dependencies /artifacts/python-packages /tmp/python-packages
-# COPY --from=dependencies /artifacts/bin /tmp/bin
-# COPY --from=dependencies /artifacts/share /tmp/share
-# COPY --from=dependencies /artifacts/include /tmp/include
-# COPY --from=dependencies /artifacts/livy /tmp/livy
-# COPY --from=dependencies /artifacts/java /tmp/java
+#COPY --from=dependencies /artifacts /tmp
 
 # Extract the tar archives
 RUN tar -xzf /tmp/python-packages.tar.gz -C /usr/local/lib/python${PYTHON_VERSION}/site-packages && \
@@ -36,9 +31,6 @@ RUN tar -xzf /tmp/python-packages.tar.gz -C /usr/local/lib/python${PYTHON_VERSIO
     tar -xzf /tmp/share.tar.gz -C /usr/local/share && \
     tar -xzf /tmp/include.tar.gz -C /usr/local/include && \
     mv /tmp/java $JAVA_HOME
-
-# RUN pip install --no-deps --no-index --find-links=/tmp/python-packages-fabric -r /tmp/fabric_requirements.txt
-# RUN pip install --no-index --find-links=/tmp/python-packages-app -r /tmp/app_requirements.txt
 
 # Set Home Directories
 ENV SPARK_HOME="/opt/spark"
@@ -80,7 +72,9 @@ RUN cp -p "${SPARK_HOME}/conf/spark-defaults.conf.template" "${SPARK_HOME}/conf/
     echo "spark.jars.ivy ${SPARK_HOME}/tmp/ivy2" >> "${SPARK_HOME}/conf/spark-defaults.conf" &&\
     echo "spark.sql.warehouse.dir /user/hive/warehouse" >> "${SPARK_HOME}/conf/spark-defaults.conf" &&\
     echo "spark.sql.catalogImplementation hive" >> "${SPARK_HOME}/conf/spark-defaults.conf" &&\
-    echo "spark.sql.execution.arrow.pyspark.enabled true" >> "${SPARK_HOME}/conf/spark-defaults.conf"
+    echo "spark.sql.execution.arrow.pyspark.enabled true" >> "${SPARK_HOME}/conf/spark-defaults.conf" &&\
+    echo "spark.sql.execution.arrow.pyspark.fallback.enabled true" >> "${SPARK_HOME}/conf/spark-defaults.conf"
+
 
 # Dynamically set delta package based on DELTA_VERSION
 RUN cp -p "${SPARK_HOME}/conf/spark-defaults.conf.template" "${SPARK_HOME}/conf/spark-defaults.conf" && \
