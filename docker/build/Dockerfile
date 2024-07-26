@@ -1,6 +1,6 @@
 ARG PYTHON_VERSION
 FROM python:${PYTHON_VERSION}-slim AS base
-
+ARG PYTHON_VERSION
 ARG JAVA_VERSION
 
 # Set environment variables
