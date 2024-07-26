@@ -68,6 +68,11 @@ jobs:
         name: build-artifacts
         path: docker/build/artifacts
 
+    - name: list artifacts dir
+      run: |
+          ls docker/build/artifacts
+
+
     - name: Load .env file
       id: dotenv
       uses: falti/dotenv-action@v1.1.2
