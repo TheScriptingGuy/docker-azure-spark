@@ -1,5 +1,5 @@
 ARG PYTHON_VERSION
-#FROM dependencies:latest AS dependencies
+FROM dependencies:latest AS dependencies
 ARG PYTHON_VERSION
 FROM python:${PYTHON_VERSION}-slim AS base
 ARG PYTHON_VERSION
@@ -20,9 +20,17 @@ ARG HIVE_VERSION
 ARG LIVY_VERSION
 ARG DERBY_VERSION
 
-COPY ./artifacts /tmp
+COPY ./artifacts /tmp/
 
-#COPY --from=dependencies /artifacts /tmp
+# Copy individual tar archives into /tmp
+# COPY ./artifacts/python-packages.tar.gz /tmp/
+# COPY ./artifacts/bin.tar.gz /tmp/
+# COPY ./artifacts/livy.tar.gz /tmp/
+# COPY ./artifacts/share.tar.gz /tmp/
+# COPY ./artifacts/include.tar.gz /tmp/
+# COPY ./artifacts/java /tmp/java
+
+COPY --from=dependencies /artifacts /tmp
 
 # Extract the tar archives
 RUN tar -xzf /tmp/python-packages.tar.gz -C /usr/local/lib/python${PYTHON_VERSION}/site-packages && \
@@ -31,8 +39,7 @@ RUN tar -xzf /tmp/python-packages.tar.gz -C /usr/local/lib/python${PYTHON_VERSIO
     tar -xzf /tmp/share.tar.gz -C /usr/local/ && \
     tar -xzf /tmp/include.tar.gz -C /usr/local/ && \
     mkdir /opt/java && \ 
-    mkdir /opt/java/openjdk && \
-    mv /tmp/java $JAVA_HOME
+    mv /tmp/java/ $JAVA_HOME
 
 # Set Home Directories
 ENV SPARK_HOME="/opt/spark"
@@ -46,9 +53,9 @@ RUN apt-get update && apt-get install -y wget curl procps
 RUN mkdir -p $SPARK_HOME && mkdir -p $HADOOP_HOME && mkdir -p $HIVE_HOME
 
 
-#############################################
-# install spark
-############################################
+# #############################################
+# # install spark
+# ############################################
 
 RUN wget --verbose "https://archive.apache.org/dist/spark/spark-$SPARK_VERSION/spark-$SPARK_VERSION-bin-hadoop$(echo $HADOOP_VERSION | cut -d '.' -f1).tgz" -O /tmp/spark.tgz && \
         tar -xf /tmp/spark.tgz -C $SPARK_HOME --strip-components=1 && \
