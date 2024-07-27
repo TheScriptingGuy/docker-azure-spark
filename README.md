@@ -46,8 +46,16 @@ Node JS
   - Maven functions
 - Running Hadoop
   - All normal Hadoop operations are supported
-
-Hive is not supported yet.
+- Running Apache Livy
+  - The Apache Livy REST API is running in the docker container. You can use Livy to control Spark operations using REST calls.
+- Running Hive
+  - Hive is up and running with a Derby Embedded Database serving as metastore
+  - Spark is integrated with hive as the catalog implementation
+  - All hive tables are stored in the default directory /user/hive/warehouse
+- Jupyter Notebooks
+  - Jupyter notebooks are up and running when running the bootstrap.sh
+  - Accessible with the default ports: http://localhost:8888
+  - Sparkmagic has been installed to optimize Jupyter to work with Spark, Pyspark, Scala and can pretty print tables. Please refer to their github page for documentation.
 
 ## How can you use this project
 
