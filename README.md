@@ -73,6 +73,10 @@ Copy the ENVTEMPLATE file and create a new .env file. Configure your Azure stora
 Optional:
 Check if the docker compose file works as expected
 
+### Docker Hub
+
+For every Fabric Runtime release, I have created a docker image which can be pulled from docker hub. You can find the project here https://hub.docker.com/repository/docker/portablespark/docker-azure-spark/general
+
 ### Run the Dev Container
 
 1. Open the project in vscode
@@ -80,6 +84,8 @@ Check if the docker compose file works as expected
 3. Search for the command Dev Containers: Rebuild and Reopen in Container
 4. The Dev container will start the docker compose process, this will take some time for building the docker container.
 5. Check if the dev container starts succesfully
+
+Note: This dev container runs the docker compose file stored in docker/run. It is based on one of the many tags from the project on docker hub. It will use a pre-build image which you can use easily for your projects
    
 ### Use the example from notebooks/NotebookStorageAccountTest.ipynb
 
