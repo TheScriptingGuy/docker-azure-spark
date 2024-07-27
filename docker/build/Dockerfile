@@ -23,11 +23,11 @@ ARG DERBY_VERSION
 COPY ./artifacts /tmp/
 
 # Copy individual tar archives into /tmp
-COPY ./artifacts/python-packages.tar.gz /tmp/
-COPY ./artifacts/bin.tar.gz /tmp/
-COPY ./artifacts/livy.tar.gz /tmp/
-COPY ./artifacts/share.tar.gz /tmp/
-COPY ./artifacts/include.tar.gz /tmp/
+COPY ./artifacts/python-packages.tar.gz /tmp/python-packages.tar.gz
+COPY ./artifacts/bin.tar.gz /tmp/bin.tar.gz
+COPY ./artifacts/livy.tar.gz /tmp/livy.tar.gz
+COPY ./artifacts/share.tar.gz /tmp/share.tar.gz
+COPY ./artifacts/include.tar.gz /tmp/include.tar.gz
 COPY ./artifacts/java /tmp/java
 
 #COPY --from=dependencies /artifacts /tmp
