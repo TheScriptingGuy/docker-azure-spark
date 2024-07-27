@@ -49,8 +49,8 @@ ENV SPARK_HOME="/opt/spark"
 ENV HIVE_HOME="/opt/hive"
 ENV HADOOP_HOME="/opt/hadoop"
 # Set environment variables
-ENV PYSPARK_PYTHON=/usr/bin/python${PYTHON_VERSION}
-ENV PYSPARK_DRIVER_PYTHON=/usr/bin/python${PYTHON_VERSION}
+ENV PYSPARK_PYTHON=/usr/local/bin/python${PYTHON_VERSION}
+ENV PYSPARK_DRIVER_PYTHON=/usr/local/bin/python${PYTHON_VERSION}
 RUN apt-get update && apt-get install -y wget curl procps
 #mkdir
 RUN mkdir -p $SPARK_HOME && mkdir -p $HADOOP_HOME && mkdir -p $HIVE_HOME
