@@ -39,7 +39,7 @@ RUN tar -xzf /tmp/python-packages.tar.gz -C /usr/local/lib/python${PYTHON_VERSIO
     tar -xzf /tmp/share.tar.gz -C /usr/local/ && \
     tar -xzf /tmp/include.tar.gz -C /usr/local/ && \
     mkdir /opt/java && \ 
-    mv /tmp/java/java $JAVA_HOME
+    mv /tmp/java/ $JAVA_HOME
 
 # Set Home Directories
 ENV SPARK_HOME="/opt/spark"

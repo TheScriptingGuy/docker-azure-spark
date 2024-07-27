@@ -70,7 +70,7 @@ jobs:
 
     - name: list artifacts dir
       run: |
-          ls docker/build/artifacts
+          ls docker/build/artifacts/java
 
 
     - name: Load .env file
