@@ -1,5 +1,7 @@
-ARG PYTHON_VERSION
 #FROM dependencies:latest AS dependencies
+ARG PYTHON_VERSION
+ARG JAVA_VERSION
+FROM eclipse-temurin:${JAVA_VERSION}-jre as java-jre
 ARG PYTHON_VERSION
 FROM python:${PYTHON_VERSION}-slim AS base
 ARG PYTHON_VERSION
@@ -37,9 +39,10 @@ RUN tar -xzf /tmp/python-packages.tar.gz -C /usr/local/lib/python${PYTHON_VERSIO
     tar -xzf /tmp/bin.tar.gz -C /usr/local/ && \
     tar -xzf /tmp/livy.tar.gz -C /opt/ && \
     tar -xzf /tmp/share.tar.gz -C /usr/local/ && \
-    tar -xzf /tmp/include.tar.gz -C /usr/local/ && \
-    mkdir /opt/java && \ 
-    mv /tmp/java/ $JAVA_HOME
+    tar -xzf /tmp/include.tar.gz -C /usr/local/
+
+# Copy the Java Runtime Environment (JRE) from the eclipse-temurin image
+COPY --from=java-jre $JAVA_HOME $JAVA_HOME
 
 # Set Home Directories
 ENV SPARK_HOME="/opt/spark"

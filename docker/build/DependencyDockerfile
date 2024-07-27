@@ -42,17 +42,11 @@ RUN curl --progress-bar -L --retry 3 \
 
 COPY livy/conf/livy.conf /usr/livy/conf/livy.conf
 
-# Set environment variables
-ENV JAVA_HOME=/opt/java/openjdk \
-    PATH="${JAVA_HOME}/bin:${PATH}"
-
 RUN tar -czf /artifacts/python-packages.tar.gz -C /usr/local/lib/python${PYTHON_VERSION} site-packages
 RUN tar -czf /artifacts/bin.tar.gz -C /usr/local bin
 RUN tar -czf /artifacts/include.tar.gz -C /usr/local include
 RUN tar -czf /artifacts/share.tar.gz -C /usr/local share 
 RUN tar -czf /artifacts/livy.tar.gz -C /opt livy
-# Copy the Java Runtime Environment (JRE) from the eclipse-temurin image
-COPY --from=java-jre $JAVA_HOME /artifacts/java
 
 
 # Add an entrypoint to keep the container running
