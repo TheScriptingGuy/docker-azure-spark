@@ -23,17 +23,17 @@ ARG DERBY_VERSION
 COPY ./artifacts /tmp/
 
 # Copy individual tar archives into /tmp
-COPY artifacts/python-packages.tar.gz /tmp/python-packages.tar.gz
-COPY artifacts/bin.tar.gz /tmp/bin.tar.gz
-COPY artifacts/livy.tar.gz /tmp/livy.tar.gz
-COPY artifacts/share.tar.gz /tmp/share.tar.gz
-COPY artifacts/include.tar.gz /tmp/include.tar.gz
-COPY artifacts/java /tmp/java
+# COPY artifacts/python-packages.tar.gz /tmp/python-packages.tar.gz
+# COPY artifacts/bin.tar.gz /tmp/bin.tar.gz
+# COPY artifacts/livy.tar.gz /tmp/livy.tar.gz
+# COPY artifacts/share.tar.gz /tmp/share.tar.gz
+# COPY artifacts/include.tar.gz /tmp/include.tar.gz
+# COPY artifacts/java /tmp/java
 
 #COPY --from=dependencies /artifacts /tmp
 
 # Extract the tar archives
-RUN tar -xzf /tmp/python-packages.tar.gz -C /usr/local/lib/python3.10 && \
+RUN tar -xzf /tmp/python-packages.tar.gz -C /usr/local/lib/python${PYTHON_VERSION} && \
     tar -xzf /tmp/bin.tar.gz -C /usr/local/ && \
     tar -xzf /tmp/livy.tar.gz -C /opt/ && \
     tar -xzf /tmp/share.tar.gz -C /usr/local/ && \
