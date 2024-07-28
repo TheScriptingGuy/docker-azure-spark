@@ -2,6 +2,7 @@
 ARG PYTHON_VERSION
 ARG JAVA_VERSION
 FROM eclipse-temurin:${JAVA_VERSION}-jre as java-jre
+
 ARG PYTHON_VERSION
 FROM python:${PYTHON_VERSION}-slim AS base
 ARG PYTHON_VERSION
@@ -37,7 +38,9 @@ COPY ./artifacts /tmp/
 # COPY artifacts/include.tar.gz /tmp/include.tar.gz
 # COPY artifacts/java /tmp/java
 
-#COPY --from=dependencies /artifacts /tmp
+# Local Build steps to directly copy the tar archives, commented out by default because of disk size limit on github actions.
+# FROM dependencies:latest AS dependencies
+# COPY --from=dependencies /artifacts /tmp
 
 # Extract the tar archives
 RUN tar -xzf /tmp/python-packages.tar.gz -C /usr/local/lib/python${PYTHON_VERSION} && \
@@ -226,8 +229,9 @@ ENV SPARK_CLASSPATH="$SPARK_CLASSPATH:$HADOOP_CLASSPATH"
 ###########################################
 
 #SET ENV Variables
-ENV DERBY_HOME /opt/derby \
-    PATH $PATH:$DERBY_HOME/bin
+ENV DERBY_HOME=/opt/derby \
+    PATH=$PATH:$DERBY_HOME/bin \
+    CLASSPATH=$CLASSPATH:$DERBY_HOME/lib/*
 
 # Download and install Derby
 RUN wget --verbose "https://archive.apache.org/dist/db/derby/db-derby-$DERBY_VERSION/db-derby-$DERBY_VERSION-bin.tar.gz" -O /tmp/derby.tar.gz \
