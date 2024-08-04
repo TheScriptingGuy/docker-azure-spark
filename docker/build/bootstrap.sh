@@ -46,6 +46,8 @@ echo $AZURE_STORAGE_ACCOUNTS | jq -c '.[]' | while read i; do \
         $HADOOP_HOME/etc/hadoop/core-site.xml; \
     done
 
+$DERBY_HOME/bin/startNetworkServer &
+
 export YARN_CONF_DIR=$HADOOP_PREFIX/etc
 
 mkdir -p /tmp/spark/data
