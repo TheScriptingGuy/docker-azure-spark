@@ -34,10 +34,12 @@
         "black-formatter.path": [
           "/usr/local/bin/black"
         ],
-        "sonarlint.pathToNodeExecutable": "/root/.nvm/versions/node/v21.0.0/bin/node",
         "jupyter.kernels.trusted": [
           "/usr/local/share/jupyter/kernels/pysparkkernel/kernel.json",
-          "/usr/local/share/jupyter/kernels/sparkkernel/kernel.json"
+          "/usr/local/share/jupyter/kernels/python3/kernel.json",
+          "/usr/local/share/jupyter/kernels/sparkkernel/kernel.json",
+          "/usr/local/share/jupyter/kernels/sparkrkernel/kernel.json",
+          "/usr/local/share/jupyter/kernels/spylon-kernel/kernel.json"
         ],
         "python.languageServer": "Default",
         "python.formatting.provider": "black",

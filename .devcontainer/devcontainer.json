@@ -34,7 +34,6 @@
         "black-formatter.path": [
           "/usr/local/bin/black"
         ],
-        "sonarlint.pathToNodeExecutable": "/root/.nvm/versions/node/v21.0.0/bin/node",
         "jupyter.kernels.trusted": [
           "/usr/local/share/jupyter/kernels/pysparkkernel/kernel.json",
           "/usr/local/share/jupyter/kernels/sparkkernel/kernel.json"
