@@ -21,6 +21,8 @@ bash $HADOOP_PREFIX/etc/hadoop/mapred-env.sh
 bash $SPARK_HOME/conf/spark-env.sh
 echo $HADOOP_OPTS
 
+nohup jupyter notebook --allow-root --NotebookApp.allow_origin='*' --NotebookApp.password='' --NotebookApp.token='' &
+
 #loop through Azure Storage Accounts JSON Array and add the values in the HADOOP Config files
 echo $AZURE_STORAGE_ACCOUNTS | jq -c '.[]' | while read i; do \
         AZURE_STORAGE_ACCOUNT_NAME=$(echo $i | jq -r '.StorageAccountName') && \
@@ -67,7 +69,6 @@ echo "Starting Hive server2..."
 hiveserver2 > /home/root/hive-server.log 2>&1 &
 # Start Jupyter Notebook without a password
 
-bash jupyter notebook --allow-root --NotebookApp.allow_origin='*' --NotebookApp.password='' --NotebookApp.token='' &
 $LIVY_HOME/bin/livy-server &
 # start ssh
 /usr/sbin/sshd  &

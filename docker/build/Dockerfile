@@ -1,3 +1,5 @@
+#ARG PYTHON_VERSION
+#ARG JAVA_VERSION
 #FROM dependencies:latest AS dependencies
 ARG PYTHON_VERSION
 ARG JAVA_VERSION
@@ -39,8 +41,7 @@ COPY ./artifacts /tmp/
 # COPY artifacts/java /tmp/java
 
 # Local Build steps to directly copy the tar archives, commented out by default because of disk size limit on github actions.
-# FROM dependencies:latest AS dependencies
-# COPY --from=dependencies /artifacts /tmp
+#COPY --from=dependencies /artifacts /tmp
 
 # Extract the tar archives
 RUN tar -xzf /tmp/python-packages.tar.gz -C /usr/local/lib/python${PYTHON_VERSION} && \
@@ -260,11 +261,12 @@ COPY sparkmagic/example_config.json /home/root/.sparkmagic/config.json
 RUN mkdir -p /home/root/.sparkmagic && \
     sed -i 's/localhost/spark/g' /home/root/.sparkmagic/config.json && \
     jupyter nbextension enable --py --sys-prefix widgetsnbextension && \
-    KERNELS_LOCATION=$(pip show sparkmagic | grep Location | cut -d" " -f2)/sparkmagic/kernels && \
-    jupyter-kernelspec install --user ${KERNELS_LOCATION}/sparkkernel && \
-    jupyter-kernelspec install --user ${KERNELS_LOCATION}/pysparkkernel && \
-    jupyter-kernelspec install --user ${KERNELS_LOCATION}/sparkrkernel && \
-    jupyter serverextension enable --py sparkmagic
+    export KERNELS_LOCATION="$(pip show sparkmagic | grep Location | cut -d" " -f2)/sparkmagic/kernels" && \
+    jupyter-kernelspec install ${KERNELS_LOCATION}/sparkkernel && \
+    jupyter-kernelspec install ${KERNELS_LOCATION}/pysparkkernel && \
+    jupyter-kernelspec install ${KERNELS_LOCATION}/sparkrkernel && \
+    jupyter serverextension enable --py sparkmagic && \
+    echo 'export JUPYTER_PATH=/usr/local/share/jupyter/kernels' >> ~/.bashrc
 
 ###########################################
 # Finalize
