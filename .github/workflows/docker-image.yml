@@ -99,8 +99,9 @@ jobs:
           JAVA_VERSION=${{ steps.dotenv.outputs.java_version }}
           ARTIFACTS_PATH=./artifacts 
 
-  test:
+  validate:
     runs-on: ubuntu-latest
+    needs: use-artifacts
 
     container:
       image: portablespark/docker-azure-spark:${{ github.ref_name }}
