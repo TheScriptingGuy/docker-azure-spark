@@ -302,7 +302,7 @@ EXPOSE 8998
 
 USER root
 
-RUN echo 'export PATH=$PATH:$HADOOP_PREFIX/bin:$SPARK_HOME/bin:$HIVE_HOME/bin:$DERBY_HOME/bin:$JAVA_HOME/bin' >> ~/.bashrc
+RUN echo 'export PATH=$PATH:$HADOOP_PREFIX/bin:$SPARK_HOME/bin:$HIVE_HOME/bin:$DERBY_HOME/bin:$JAVA_HOME/bin' >> /etc/environment
 ENV YARN_RESOURCEMANAGER_USER=root \
     YARN_NODEMANAGER_USER=root
 
