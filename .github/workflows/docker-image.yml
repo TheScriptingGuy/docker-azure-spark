@@ -98,3 +98,22 @@ jobs:
           DERBY_VERSION=${{ steps.dotenv.outputs.derby_version }}
           JAVA_VERSION=${{ steps.dotenv.outputs.java_version }}
           ARTIFACTS_PATH=./artifacts 
+
+  test:
+    runs-on: ubuntu-latest
+
+    container:
+      image: portablespark/docker-azure-spark:${{ github.ref_name }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r docker/tests/requirements.txt
+
+      - name: Run tests
+        run: |
+          pytest docker/tests

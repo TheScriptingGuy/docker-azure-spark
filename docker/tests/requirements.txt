@@ -1,0 +1,4 @@
+pytest
+pyhive==0.7.0
+thrift==0.20.0
+thrift-sasl==0.4.3

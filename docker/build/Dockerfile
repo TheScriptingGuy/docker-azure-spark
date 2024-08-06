@@ -89,13 +89,15 @@ RUN cp -p "${SPARK_HOME}/conf/spark-defaults.conf.template" "${SPARK_HOME}/conf/
     echo 'spark.executor.extraJavaOptions -Dio.netty.tryReflectionSetAccessible=true' >> "${SPARK_HOME}/conf/spark-defaults.conf" && \
     echo 'spark.serializer org.apache.spark.serializer.KryoSerializer' >> "${SPARK_HOME}/conf/spark-defaults.conf" && \
     echo 'spark.sql.catalog.spark_catalog org.apache.spark.sql.delta.catalog.DeltaCatalog'  >> "${SPARK_HOME}/conf/spark-defaults.conf" && \
+    echo 'spark.hive.metastore.uris thrift://127.0.0.1:9083'  >> "${SPARK_HOME}/conf/spark-defaults.conf" && \
     echo 'spark.sql.extensions io.delta.sql.DeltaSparkSessionExtension' >> "${SPARK_HOME}/conf/spark-defaults.conf" &&\
+    echo 'spark.hive.metastore.schema.verification false' >> "${SPARK_HOME}/conf/spark-defaults.conf" &&\
+    echo 'hive.metastore.schema.verification false' >> "${SPARK_HOME}/conf/spark-defaults.conf" &&\
     echo "spark.jars.ivy ${SPARK_HOME}/tmp/ivy2" >> "${SPARK_HOME}/conf/spark-defaults.conf" &&\
     echo "spark.sql.warehouse.dir /user/hive/warehouse" >> "${SPARK_HOME}/conf/spark-defaults.conf" &&\
     echo "spark.sql.catalogImplementation hive" >> "${SPARK_HOME}/conf/spark-defaults.conf" &&\
     echo "spark.sql.execution.arrow.pyspark.enabled true" >> "${SPARK_HOME}/conf/spark-defaults.conf" &&\
     echo "spark.sql.execution.arrow.pyspark.fallback.enabled true" >> "${SPARK_HOME}/conf/spark-defaults.conf"
-
 
 # Dynamically set delta package based on DELTA_VERSION
 RUN if [ "$(printf '3\n%s' "$DELTA_VERSION" | sort -V | head -n1)" = "3" ]; then \
@@ -264,8 +266,7 @@ RUN mkdir -p /home/root/.sparkmagic && \
     jupyter-kernelspec install ${KERNELS_LOCATION}/sparkkernel && \
     jupyter-kernelspec install ${KERNELS_LOCATION}/pysparkkernel && \
     jupyter-kernelspec install ${KERNELS_LOCATION}/sparkrkernel && \
-    jupyter serverextension enable --py sparkmagic && \
-    echo 'export JUPYTER_PATH=/usr/local/share/jupyter/kernels' >> ~/.bashrc
+    jupyter serverextension enable --py sparkmagic
 
 ###########################################
 # Finalize
@@ -301,9 +302,10 @@ EXPOSE 8998
 
 USER root
 
-RUN echo 'export PATH=$PATH:$HADOOP_PREFIX/bin:$SPARK_HOME/bin:$HIVE_HOME/bin:$DERBY_HOME/bin:$JAVA_HOME/bin' >> /etc/environment
-ENV YARN_RESOURCEMANAGER_USER=root \
-    YARN_NODEMANAGER_USER=root
+ENV PATH=$PATH:$HADOOP_PREFIX/bin:$SPARK_HOME/bin:$HIVE_HOME/bin:$DERBY_HOME/bin:$JAVA_HOME/bin \
+    YARN_RESOURCEMANAGER_USER=root \
+    YARN_NODEMANAGER_USER=root \
+    JUPYTER_PATH=/usr/local/share/jupyter/kernels
 
 # Clean up temporary files
 RUN rm -rf /tmp/*
