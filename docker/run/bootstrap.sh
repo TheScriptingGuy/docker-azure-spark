@@ -50,7 +50,7 @@ echo $AZURE_STORAGE_ACCOUNTS | jq -c '.[]' | while read i; do \
         $HADOOP_HOME/etc/hadoop/core-site.xml; \
     done
 
-$DERBY_HOME/bin/startNetworkServer &
+$DERBY_HOME/bin/startNetworkServer > /home/root/derby-server.log &
 
 export YARN_CONF_DIR=$HADOOP_PREFIX/etc
 
