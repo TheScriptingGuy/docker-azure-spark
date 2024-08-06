@@ -98,8 +98,7 @@ RUN cp -p "${SPARK_HOME}/conf/spark-defaults.conf.template" "${SPARK_HOME}/conf/
 
 
 # Dynamically set delta package based on DELTA_VERSION
-RUN cp -p "${SPARK_HOME}/conf/spark-defaults.conf.template" "${SPARK_HOME}/conf/spark-defaults.conf" && \
-    if [ "$(printf '3\n%s' "$DELTA_VERSION" | sort -V | head -n1)" = "3" ]; then \
+RUN if [ "$(printf '3\n%s' "$DELTA_VERSION" | sort -V | head -n1)" = "3" ]; then \
         DELTA_PACKAGE="io.delta:delta-spark_2.12:$DELTA_VERSION"; \
     else \
         DELTA_PACKAGE="io.delta:delta-core_2.12:$DELTA_VERSION"; \
