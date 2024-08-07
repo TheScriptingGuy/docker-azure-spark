@@ -308,12 +308,12 @@ ENV PATH=$PATH:$HADOOP_PREFIX/bin:$SPARK_HOME/bin:$HIVE_HOME/bin:$DERBY_HOME/bin
     JUPYTER_PATH=/usr/local/share/jupyter/kernels
 #Add Derby/Hive user
 RUN adduser APP --allow-bad-names --disabled-password --quiet && \
-    "APP:mine" | sudo chpasswd \
-    hdfs dfs -mkdir -p  /user/hive/warehouse \
-    hdfs dfs -mkdir /user/root \
-    hdfs dfs -chown root:hdfs /user/root \
-    hdfs dfs -chown app:hdfs /user/hive \
-    hdfs dfs -chown app:hdfs /tmp \
+    "APP:mine" | sudo chpasswd && \
+    hdfs dfs -mkdir -p  /user/hive/warehouse && \
+    hdfs dfs -mkdir /user/root && \
+    hdfs dfs -chown root:hdfs /user/root && \
+    hdfs dfs -chown app:hdfs /user/hive && \
+    hdfs dfs -chown app:hdfs /tmp && \
     mkdir -p /opt/hive/logs
 
 # Make environment available to all users
