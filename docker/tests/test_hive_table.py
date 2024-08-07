@@ -23,7 +23,7 @@ class TestHiveTableCreation(unittest.TestCase):
         self.spark.stop()
 
         # Connect to Hive
-        conn = pyhive.hive.connect('localhost')
+        conn = pyhive.hive.connect('localhost',auth='NOSASL')
         cursor = conn.cursor()
 
         # Query Hive metastore to check if the table exists
