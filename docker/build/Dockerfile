@@ -318,8 +318,10 @@ RUN hdfs dfs -mkdir -p  /user/hive/warehouse && \
     hdfs dfs -mkdir /user/root && \
     hdfs dfs -chown root:hdfs /user/root && \
     hdfs dfs -chown APP:hdfs /user/hive && \
-    hdfs dfs -chown APP:hdfs /tmp && \
-    mkdir -p /opt/hive/logs
+    chown -R APP:APP /opt/hive && \
+    chown -R APP:APP /user/hive && \
+    mkdir -p /opt/hive/logs && \
+
 
 # Make environment available to all users
 RUN sh -c 'grep -qxF "session required pam_env.so" /etc/pam.d/common-session || echo "session required pam_env.so" >> /etc/pam.d/common-session' && \
