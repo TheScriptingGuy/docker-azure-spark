@@ -2,7 +2,7 @@ version: '3'
 
 services:
   delta-spark-run:
-    image: portablespark/docker-azure-spark:3.4.3_1.0.1
+    image: portablespark/docker-azure-spark:3.3.4_1.0.1
     user: root
     entrypoint: /bootstrap.sh
     env_file:
@@ -11,8 +11,10 @@ services:
       - "8080:8080" # Spark Master UI
       - "7077:7077" # Spark Master
       - "8081:8081" # Spark Worker UI
-      - "9083:9083" # Hive
+      - "9083:9083" # Hive Metastore
       - "8888:8888" # Jupyter
+      - "10000:10000" # HiveServer2
+      - 
     volumes:
       - ../..:/workspace:cached
       - ./bootstrap.sh:/bootstrap.sh

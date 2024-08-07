@@ -65,11 +65,10 @@ if [ ! -f "$NAMEDIR"/initialized ]; then
 fi
 
 echo "Starting Hive Metastore..."
-hive --service metastore > /home/root/hive-metastore.log 2>&1 &
+sudo -u APP -H bash -c 'nohup /opt/hive/bin/hive --service metastore --hiveconf hive.root.logger=INFO,console > /opt/hive/logs/metastore.log 2>&1 &'
 
 echo "Starting Hive server2..."
-hiveserver2 > /home/root/hive-server.log 2>&1 &
-# Start Jupyter Notebook without a password
+sudo -u APP -H bash -c 'nohup /opt/hive/bin/hive --service hiveserver2 --hiveconf hive.root.logger=INFO,console > /opt/hive/logs/hive-server.log 2>&1 &'
 
 $LIVY_HOME/bin/livy-server &
 # start ssh

@@ -25,7 +25,16 @@
         <value>thrift://0.0.0.0:9083</value>
         <description>Thrift URI for the remote metastore. Used by metastore client to connect to remote metastore.</description>
     </property>
-    <!-- Derby metastore connection details (stores info about tables etc.) -->
+    <property>
+        <name>hive.root.logger</name>
+        <value>ERROR,console</value>
+        <description>root logger for info</description>
+    </property>
+    <property>
+        <name>hive.metastore.uris</name>
+        <value>thrift://0.0.0.0:9083</value>
+        <description>Thrift URI for the remote metastore. Used by metastore client to connect to remote metastore.</description>
+    </property>
     <property>
         <name>javax.jdo.option.ConnectionDriverName</name>
         <value>org.apache.derby.jdbc.ClientDriver</value>
@@ -33,6 +42,14 @@
     <property>
         <name>javax.jdo.option.ConnectionURL</name>
         <value>jdbc:derby://localhost:1527/metastore_db;create=true</value>
+    </property>
+    <property>
+        <name>javax.jdo.option.ConnectionUserName</name>
+        <value>APP</value>
+    </property>
+    <property>
+        <name>javax.jdo.option.ConnectionPassword</name>
+        <value>mine</value>
     </property>
     <property>
         <name>datanucleus.autoCreateSchema</name>
@@ -45,12 +62,20 @@
         <description>Automatically creates necessary schema on startup if it doesn't exist</description>
     </property>
     <property>
-        <name>javax.jdo.option.ConnectionUserName</name>
-        <value>hive</value>
+        <name>hive.security.authorization.enabled</name>
+        <value>true</value>
     </property>
     <property>
-        <name>javax.jdo.option.ConnectionPassword</name>
-        <value>hive</value>
+        <name>hive.security.authorization.manager</name>
+        <value>org.apache.hadoop.hive.ql.security.authorization.plugin.sqlstd.SQLStdConfOnlyAuthorizerFactory</value>
+    </property>
+    <property>
+        <name>hive.security.authenticator.manager</name>
+        <value>org.apache.hadoop.hive.ql.security.SessionStateUserAuthenticator</value>
+    </property>
+    <property>
+        <name>hive.users.in.admin.role</name>
+        <value>APP</value>
     </property>
     <property>
         <name>hive.metastore.schema.verification</name>
@@ -60,17 +85,8 @@
         <name>hive.execution.engine</name>
         <value>spark</value>
     </property>
-        <!-- Thrift server settings -->
-    <property>
-        <name>hive.server2.thrift.port</name>
-        <value>10000</value>
-    </property>
-    <property>
-        <name>hive.server2.thrift.bind.host</name>
-        <value>0.0.0.0</value>
-    </property>
-    <property>
-        <name>hive.server2.transport.mode</name>
-        <value>binary</value>
+        <property> 
+        <name>hive.metastore.event.db.notification.api.auth</name>
+        <value>false</value>
     </property>
 </configuration>

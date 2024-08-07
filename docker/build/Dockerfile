@@ -121,11 +121,11 @@ RUN if [ -n "$HIVE_VERSION" ]; then \
 ENV HIVE_HOME=/opt/hive
 ENV HIVE_CONF_DIR=$HIVE_HOME/conf
 ENV PATH=$HIVE_HOME/sbin:$HIVE_HOME/bin:$PATH
-COPY hive/conf/hive-site.xml $HIVE_CONF_DIR/
+COPY hive/conf/ $HIVE_CONF_DIR/
 
 ENV SPARK_CLASSPATH="$SPARK_CLASSPATH:$HIVE_HOME/lib/"
 
-COPY hive/conf/hive-site.xml $SPARK_HOME/conf/hive-site.xml
+COPY hive/conf/ $SPARK_HOME/conf/
 
 #############################################
 # install HADOOP
@@ -306,7 +306,19 @@ ENV PATH=$PATH:$HADOOP_PREFIX/bin:$SPARK_HOME/bin:$HIVE_HOME/bin:$DERBY_HOME/bin
     YARN_RESOURCEMANAGER_USER=root \
     YARN_NODEMANAGER_USER=root \
     JUPYTER_PATH=/usr/local/share/jupyter/kernels
+#Add Derby/Hive user
+RUN adduser APP --allow-bad-names --disabled-password --quiet && \
+    "APP:mine" | sudo chpasswd \
+    hdfs dfs -mkdir -p  /user/hive/warehouse \
+    hdfs dfs -mkdir /user/root \
+    hdfs dfs -chown root:hdfs /user/root \
+    hdfs dfs -chown app:hdfs /user/hive \
+    hdfs dfs -chown app:hdfs /tmp \
+    mkdir -p /opt/hive/logs
 
+# Make environment available to all users
+RUN sh -c 'grep -qxF "session required pam_env.so" /etc/pam.d/common-session || echo "session required pam_env.so" >> /etc/pam.d/common-session' && \
+    sh -c 'grep -qxF "session required pam_env.so" /etc/pam.d/common-session-noninteractive || echo "session required pam_env.so" >> /etc/pam.d/common-session-noninteractive'
 # Clean up temporary files
 RUN rm -rf /tmp/*
 
