@@ -232,8 +232,7 @@ ENV SPARK_CLASSPATH="$SPARK_CLASSPATH:$HADOOP_CLASSPATH"
 
 #SET ENV Variables
 ENV DERBY_HOME=/opt/derby \
-    PATH=$PATH:$DERBY_HOME/bin \
-    CLASSPATH=$CLASSPATH:$DERBY_HOME/lib/*
+    PATH=$PATH:$DERBY_HOME/bin
 
 # Download and install Derby
 RUN wget --verbose "https://archive.apache.org/dist/db/derby/db-derby-$DERBY_VERSION/db-derby-$DERBY_VERSION-bin.tar.gz" -O /tmp/derby.tar.gz \
@@ -306,6 +305,7 @@ EXPOSE 8998
 USER root
 
 ENV PATH=$PATH:$HADOOP_PREFIX/bin:$SPARK_HOME/bin:$HIVE_HOME/bin:$DERBY_HOME/bin:$JAVA_HOME/bin \
+    CLASSPATH=$CLASSPATH:$HIVE_HOME/lib/*:$HADOOP_HOME/lib/*:$DERBY_HOME/lib/* \
     YARN_RESOURCEMANAGER_USER=root \
     YARN_NODEMANAGER_USER=root \
     JUPYTER_PATH=/usr/local/share/jupyter/kernels
