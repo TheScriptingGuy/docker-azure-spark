@@ -291,6 +291,9 @@ EXPOSE 7077 8080 18080
 # Jupyter Notebook port
 EXPOSE 8888
 
+# Hive Metastore and HiveServer2 ports
+EXPOSE 9083 10000
+
 # MapReduce JobHistory Server ports
 EXPOSE 10020 19888
 
