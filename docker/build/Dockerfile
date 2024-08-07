@@ -312,9 +312,7 @@ ENV PATH=$PATH:$HADOOP_PREFIX/bin:$SPARK_HOME/bin:$HIVE_HOME/bin:$DERBY_HOME/bin
 #Add Derby/Hive user
 RUN adduser APP --allow-bad-names --disabled-password --quiet && \
     "APP:mine" | sudo chpasswd && \
-    if ! getent group hdfs > /dev/null; then && \
-        groupadd hdfs \
-    fi && \
+    getent group hdfs > /dev/null || groupadd hdfs && \
     hdfs dfs -mkdir -p  /user/hive/warehouse && \
     hdfs dfs -mkdir /user/root && \
     hdfs dfs -chown root:hdfs /user/root && \
