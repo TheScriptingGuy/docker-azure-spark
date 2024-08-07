@@ -310,7 +310,7 @@ ENV PATH=$PATH:$HADOOP_PREFIX/bin:$SPARK_HOME/bin:$HIVE_HOME/bin:$DERBY_HOME/bin
     YARN_NODEMANAGER_USER=root \
     JUPYTER_PATH=/usr/local/share/jupyter/kernels
 #Add Derby/Hive user
-RUN sudo adduser APP --allow-bad-names --disabled-password --quiet && \
+RUN useradd -ms /bin/bash APP && \
     "APP:mine" | sudo chpasswd && \
     getent group hdfs > /dev/null || groupadd hdfs
 
