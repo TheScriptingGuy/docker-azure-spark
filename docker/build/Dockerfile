@@ -310,15 +310,15 @@ ENV PATH=$PATH:$HADOOP_PREFIX/bin:$SPARK_HOME/bin:$HIVE_HOME/bin:$DERBY_HOME/bin
     YARN_NODEMANAGER_USER=root \
     JUPYTER_PATH=/usr/local/share/jupyter/kernels
 #Add Derby/Hive user
-RUN useradd -ms /bin/bash APP && \
+RUN useradd -s /bin/bash -m APP && \
     "APP:mine" | sudo chpasswd && \
     getent group hdfs > /dev/null || groupadd hdfs
 
 RUN hdfs dfs -mkdir -p  /user/hive/warehouse && \
     hdfs dfs -mkdir /user/root && \
     hdfs dfs -chown root:hdfs /user/root && \
-    hdfs dfs -chown app:hdfs /user/hive && \
-    hdfs dfs -chown app:hdfs /tmp && \
+    hdfs dfs -chown APP:hdfs /user/hive && \
+    hdfs dfs -chown APP:hdfs /tmp && \
     mkdir -p /opt/hive/logs
 
 # Make environment available to all users
