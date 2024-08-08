@@ -89,4 +89,8 @@
         <name>hive.metastore.event.db.notification.api.auth</name>
         <value>false</value>
     </property>
+    <property>
+        <name>hive.exec.pre.hooks</name>
+        <value>org.apache.hadoop.hive.ql.hooks.ATSHook</value>
+    </property>
 </configuration>
