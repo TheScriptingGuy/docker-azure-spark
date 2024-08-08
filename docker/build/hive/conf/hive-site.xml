@@ -85,12 +85,24 @@
         <name>hive.execution.engine</name>
         <value>spark</value>
     </property>
-        <property> 
-        <name>hive.metastore.event.db.notification.api.auth</name>
+    <property>
+        <name>spark.master</name>
+        <value>local[*]</value>
+    </property>
+    <property>
+        <name>spark.sql.hive.convertMetastoreParquet</name>
         <value>false</value>
     </property>
     <property>
-        <name>hive.exec.pre.hooks</name>
-        <value>org.apache.hadoop.hive.ql.hooks.ATSHook</value>
+        <name>spark.eventLog.dir</name>
+        <value>/tmp/spark-events</value>
+    </property>
+    <property>
+        <name>spark.serializer</name>
+        <value>org.apache.spark.serializer.KryoSerializer</value>
+    </property>
+        <property> 
+        <name>hive.metastore.event.db.notification.api.auth</name>
+        <value>false</value>
     </property>
 </configuration>
