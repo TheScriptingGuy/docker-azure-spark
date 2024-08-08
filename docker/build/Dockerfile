@@ -325,7 +325,7 @@ RUN hdfs dfs -mkdir -p /user/hive/warehouse && \
     chmod -R 755 /opt/hadoop && \
     chmod -R 755 /tmp && \
     chmod -R 755 /user/hive && \
-    mkdir -p /opt/hive/logs \
+    mkdir -p /opt/hive/logs
 
 
 # Make environment available to all users
