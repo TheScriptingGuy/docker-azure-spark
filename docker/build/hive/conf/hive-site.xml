@@ -26,16 +26,6 @@
         <description>Thrift URI for the remote metastore. Used by metastore client to connect to remote metastore.</description>
     </property>
     <property>
-        <name>hive.root.logger</name>
-        <value>ERROR,console</value>
-        <description>root logger for info</description>
-    </property>
-    <property>
-        <name>hive.metastore.uris</name>
-        <value>thrift://0.0.0.0:9083</value>
-        <description>Thrift URI for the remote metastore. Used by metastore client to connect to remote metastore.</description>
-    </property>
-    <property>
         <name>javax.jdo.option.ConnectionDriverName</name>
         <value>org.apache.derby.jdbc.ClientDriver</value>
     </property>
