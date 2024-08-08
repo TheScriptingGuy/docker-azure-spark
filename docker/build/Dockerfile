@@ -320,9 +320,11 @@ RUN hdfs dfs -mkdir -p /user/hive/warehouse && \
     hdfs dfs -mkdir /user/root && \
     hdfs dfs -chown root:hdfs /user/root && \
     hdfs dfs -chown APP:hdfs /user/hive && \
-    chown -R APP:APP /opt/hive && \
-    chown -R APP:APP /user/hive && \
-    chown -R APP:APP /tmp && \
+    chmod -R 755 /opt/hive && \
+    chmod -R 755 /opt/spark && \
+    chmod -R 755 /opt/hadoop && \
+    chmod -R 755 /tmp && \
+    chmod -R 755 /user/hive && \
     mkdir -p /opt/hive/logs \
 
 
