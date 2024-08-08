@@ -313,7 +313,7 @@ ENV PATH=$PATH:$HADOOP_PREFIX/bin:$SPARK_HOME/bin:$HIVE_HOME/bin:$DERBY_HOME/bin
 #Add Derby/Hive user
 RUN useradd -s /bin/bash -m APP && \
     echo "APP:mine" | sudo chpasswd && \
-    getent group hdfs > /dev/null || groupadd hdfs \
+    getent group hdfs > /dev/null || groupadd hdfs && \
     echo 'CLASSPATH="$(find $HIVE_HOME/lib -name '*.jar' -printf '%p:')"' && \
     echo 'CLASSPATH+="$(find $HADOOP_HOME/share/hadoop/common/lib -name '*.jar' -printf '%p:')"' && \
     echo 'CLASSPATH+="$(find $SPARK_HOME/jars -name '*.jar' -printf '%p:')"' && \
