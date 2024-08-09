@@ -304,21 +304,67 @@ EXPOSE 8998
 
 USER root
 
+# Install Apache Tez
+RUN wget https://archive.apache.org/dist/tez/0.9.2/apache-tez-0.9.2-bin.tar.gz -O /tmp/apache-tez-0.9.2-bin.tar.gz && \
+    tar -xzf /tmp/apache-tez-0.9.2-bin.tar.gz -C /opt && \
+    mv /opt/apache-tez-0.9.2-bin /opt/tez && \
+    rm /tmp/apache-tez-0.9.2-bin.tar.gz && \
+    # Create the classpath for Tez
+    for jar in /opt/tez/*.jar; do \
+        CLASSPATH=$CLASSPATH:$jar; \
+    done && \
+    # Create the classpath for Spark
+    for jar in /opt/spark/jars/*.jar; do \
+        CLASSPATH=$CLASSPATH:$jar; \
+    done && \
+    # Create the classpath for Hive
+    for jar in /opt/hive/lib/*.jar; do \
+        CLASSPATH=$CLASSPATH:$jar; \
+    done && \
+    # Create the classpath for Hadoop Common
+    for jar in $HADOOP_HOME/share/hadoop/common/*.jar; do \
+        CLASSPATH=$CLASSPATH:$jar; \
+    done && \
+    for jar in $HADOOP_HOME/share/hadoop/common/lib/*.jar; do \
+        CLASSPATH=$CLASSPATH:$jar; \
+    done && \
+    # Create the classpath for Hadoop HDFS
+    for jar in $HADOOP_HOME/share/hadoop/hdfs/*.jar; do \
+        CLASSPATH=$CLASSPATH:$jar; \
+    done && \
+    for jar in $HADOOP_HOME/share/hadoop/hdfs/lib/*.jar; do \
+        CLASSPATH=$CLASSPATH:$jar; \
+    done && \
+    # Create the classpath for Hadoop MapReduce
+    for jar in $HADOOP_HOME/share/hadoop/mapreduce/*.jar; do \
+        CLASSPATH=$CLASSPATH:$jar; \
+    done && \
+    for jar in $HADOOP_HOME/share/hadoop/mapreduce/lib/*.jar; do \
+        CLASSPATH=$CLASSPATH:$jar; \
+    done && \
+    # Create the classpath for Hadoop YARN
+    for jar in $HADOOP_HOME/share/hadoop/yarn/*.jar; do \
+        CLASSPATH=$CLASSPATH:$jar; \
+    done && \
+    for jar in $HADOOP_HOME/share/hadoop/yarn/lib/*.jar; do \
+        CLASSPATH=$CLASSPATH:$jar; \
+    done && \
+    # Create the classpath for Derby
+    for jar in $DERBY_HOME/lib/*.jar; do \
+        CLASSPATH=$CLASSPATH:$jar; \
+    done
+
 ENV PATH=$PATH:$HADOOP_PREFIX/bin:$SPARK_HOME/bin:$HIVE_HOME/bin:$DERBY_HOME/bin:$JAVA_HOME/bin \
     YARN_RESOURCEMANAGER_USER=root \
     YARN_NODEMANAGER_USER=root \
     JUPYTER_PATH=/usr/local/share/jupyter/kernels \
+    CLASSPATH=$CLASSPATH \
     HIVE_AUX_JARS_PATH=""
 
 #Add Derby/Hive user
 RUN useradd -s /bin/bash -m APP && \
     echo "APP:mine" | sudo chpasswd && \
-    getent group hdfs > /dev/null || groupadd hdfs && \
-    echo 'CLASSPATH=$(find $HIVE_HOME/lib -name "*.jar" -printf "%p:")' >> /etc/environment && \
-    echo 'CLASSPATH+=$(find $HADOOP_HOME/share/hadoop/common/lib -name "*.jar" -printf "%p:")' >> /etc/environment && \
-    echo 'CLASSPATH+=$(find $SPARK_HOME/jars -name "*.jar" -printf "%p:")' >> /etc/environment && \
-    echo 'CLASSPATH+=$(find $DERBY_HOME/lib -name "*.jar" -printf "%p:")' >> /etc/environment && \
-    echo 'export CLASSPATH=$(echo $CLASSPATH | tr ":" "\n" | sort | uniq | tr "\n" ":")' >> /etc/environment
+    getent group hdfs > /dev/null || groupadd hdfs
 
 
 RUN hdfs dfs -mkdir -p /user/hive/warehouse && \
