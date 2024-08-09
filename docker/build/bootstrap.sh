@@ -62,10 +62,10 @@ if [ ! -f "$NAMEDIR"/initialized ]; then
 fi
 
 echo "Starting Hive Metastore..."
-#sudo -u APP -H bash -c '/opt/hive/bin/hive --service metastore --hiveconf hive.root.logger=INFO,console > /opt/hive/logs/metastore.log 2>&1 &'
+/opt/hive/bin/hive --service metastore --hiveconf hive.root.logger=INFO,console > /opt/hive/logs/metastore.log 2>&1 &
 
 echo "Starting Hive server2..."
-#sudo -u APP -H bash -c 'nohup /opt/hive/bin/hive --service hiveserver2 --hiveconf hive.root.logger=INFO,console > /opt/hive/logs/hive-server.log 2>&1 &'
+/opt/hive/bin/hive --service hiveserver2 --hiveconf hive.root.logger=INFO,console > /opt/hive/logs/hive-server.log 2>&1 &
 
 $LIVY_HOME/bin/livy-server &
 # start ssh

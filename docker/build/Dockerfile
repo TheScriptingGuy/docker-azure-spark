@@ -305,20 +305,20 @@ EXPOSE 8998
 USER root
 
 ENV PATH=$PATH:$HADOOP_PREFIX/bin:$SPARK_HOME/bin:$HIVE_HOME/bin:$DERBY_HOME/bin:$JAVA_HOME/bin \
-    CLASSPATH=$CLASSPATH:$HIVE_HOME/lib/*:$HADOOP_HOME/lib/*:$DERBY_HOME/lib/* \
     YARN_RESOURCEMANAGER_USER=root \
     YARN_NODEMANAGER_USER=root \
-    JUPYTER_PATH=/usr/local/share/jupyter/kernels
+    JUPYTER_PATH=/usr/local/share/jupyter/kernels \
+    HIVE_AUX_JARS_PATH=""
 
 #Add Derby/Hive user
 RUN useradd -s /bin/bash -m APP && \
     echo "APP:mine" | sudo chpasswd && \
     getent group hdfs > /dev/null || groupadd hdfs && \
-    echo 'CLASSPATH="$(find $HIVE_HOME/lib -name '*.jar' -printf '%p:')"' && \
-    echo 'CLASSPATH+="$(find $HADOOP_HOME/share/hadoop/common/lib -name '*.jar' -printf '%p:')"' && \
-    echo 'CLASSPATH+="$(find $SPARK_HOME/jars -name '*.jar' -printf '%p:')"' && \
-    echo 'CLASSPATH+="$(find $DERBY_HOME/lib -name '*.jar' -printf '%p:')"' && \
-    run 'export CLASSPATH="$(echo $CLASSPATH | tr ':' '\n' | sort | uniq | tr '\n' ':')"' >> /etc/environment
+    echo 'CLASSPATH=$(find $HIVE_HOME/lib -name "*.jar" -printf "%p:")' >> /etc/environment && \
+    echo 'CLASSPATH+=$(find $HADOOP_HOME/share/hadoop/common/lib -name "*.jar" -printf "%p:")' >> /etc/environment && \
+    echo 'CLASSPATH+=$(find $SPARK_HOME/jars -name "*.jar" -printf "%p:")' >> /etc/environment && \
+    echo 'CLASSPATH+=$(find $DERBY_HOME/lib -name "*.jar" -printf "%p:")' >> /etc/environment && \
+    echo 'export CLASSPATH=$(echo $CLASSPATH | tr ":" "\n" | sort | uniq | tr "\n" ":")' >> /etc/environment
 
 
 RUN hdfs dfs -mkdir -p /user/hive/warehouse && \
