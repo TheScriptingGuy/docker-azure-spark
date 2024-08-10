@@ -116,6 +116,9 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r docker/tests/requirements.txt
 
+      - name: Run bootstrap.sh
+        run: /bootstrap.sh --unattended
+
       - name: Wait for 3 minutes
         run: sleep 180
 
