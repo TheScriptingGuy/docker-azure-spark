@@ -22,7 +22,7 @@ class TestHiveTableCreation(unittest.TestCase):
 
         # Connect to Hive using Beeline and check if the table exists
         beeline_cmd = """
-        beeline -u 'jdbc:hive2://localhost:10000/default' -e "SHOW TABLES LIKE 'test_table'"
+        beeline -u 'jdbc:hive2://localhost:10009/default' -e "SHOW TABLES LIKE 'test_table'"
         """
         result = subprocess.run(beeline_cmd, shell=True, capture_output=True, text=True)
 
