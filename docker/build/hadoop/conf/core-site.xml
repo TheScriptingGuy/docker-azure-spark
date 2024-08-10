@@ -12,7 +12,7 @@
     </property>
     <property>
         <name>fs.azure.block.blob.with.compaction.dir</name>
-        <value>/hbase/WALs,/</value>
+        <value>/hbase/WALs,/tmp/myblobfiles</value>
     </property>
     <property>
         <name>fs.azure.enable.append.support</name>
@@ -27,7 +27,15 @@
         <value>50</value>
     </property>
     <property>
+        <name>fs.AbstractFileSystem.wasb.Impl</name>
+        <value>org.apache.hadoop.fs.azure.Wasb</value>
+    </property>
+    <property>
         <name>fs.azure.atomic.rename.dir</name>
         <value>/hbase,/</value>
+    </property>
+    <property>
+        <name>fs.azure</name>
+        <value>org.apache.hadoop.fs.azure.NativeAzureFileSystem</value>
     </property>
 </configuration>

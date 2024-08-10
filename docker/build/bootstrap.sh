@@ -20,6 +20,8 @@ bash $HADOOP_PREFIX/etc/hadoop/yarn-env.sh
 bash $HADOOP_PREFIX/etc/hadoop/mapred-env.sh
 bash $SPARK_HOME/conf/spark-env.sh
 echo $HADOOP_OPTS
+# Source the environment file to make the variable available
+RUN set -a; source /etc/environment; set +a;
 
 nohup jupyter notebook --allow-root --NotebookApp.allow_origin='*' --NotebookApp.password='' --NotebookApp.token='' &
 
@@ -64,10 +66,11 @@ fi
 echo "Starting Hive Metastore..."
 /opt/hive/bin/hive --service metastore --hiveconf hive.root.logger=INFO,console > /opt/hive/logs/metastore.log 2>&1 &
 
-echo "Starting Hive server2..."
-/opt/hive/bin/hive --service hiveserver2 --hiveconf hive.root.logger=INFO,console > /opt/hive/logs/hive-server.log 2>&1 &
-
 $LIVY_HOME/bin/livy-server &
+
+echo "Starting Kyuubi Server..."
+/opt/kyuubi/bin/kyuubi start
+
 # start ssh
 /usr/sbin/sshd  &
 

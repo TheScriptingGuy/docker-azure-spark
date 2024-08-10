@@ -20,8 +20,8 @@ bash $HADOOP_PREFIX/etc/hadoop/yarn-env.sh
 bash $HADOOP_PREFIX/etc/hadoop/mapred-env.sh
 bash $SPARK_HOME/conf/spark-env.sh
 echo $HADOOP_OPTS
-
-pip install -r /requirements.txt
+# Source the environment file to make the variable available
+RUN set -a; source /etc/environment; set +a;
 
 nohup jupyter notebook --allow-root --NotebookApp.allow_origin='*' --NotebookApp.password='' --NotebookApp.token='' &
 
@@ -59,18 +59,18 @@ mkdir -p /tmp/hadoop/hdfs/tmp
 
 if [ ! -f "$NAMEDIR"/initialized ]; then
   echo "Configuring Hive..."
-  hdfs dfs -mkdir -p  /user/hive/warehouse
   schematool -dbType derby -initSchema
   touch "$NAMEDIR"/initialized
 fi
 
 echo "Starting Hive Metastore..."
-sudo -u APP -H bash -c 'nohup /opt/hive/bin/hive --service metastore --hiveconf hive.root.logger=INFO,console > /opt/hive/logs/metastore.log 2>&1 &'
-
-echo "Starting Hive server2..."
-sudo -u APP -H bash -c 'nohup /opt/hive/bin/hive --service hiveserver2 --hiveconf hive.root.logger=INFO,console > /opt/hive/logs/hive-server.log 2>&1 &'
+/opt/hive/bin/hive --service metastore --hiveconf hive.root.logger=INFO,console > /opt/hive/logs/metastore.log 2>&1 &
 
 $LIVY_HOME/bin/livy-server &
+
+echo "Starting Kyuubi Server..."
+/opt/kyuubi/bin/kyuubi start
+
 # start ssh
 /usr/sbin/sshd  &
 

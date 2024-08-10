@@ -34,6 +34,7 @@ services:
         LIVY_VERSION: ${LIVY_VERSION}
         DERBY_VERSION: ${DERBY_VERSION}
         JAVA_VERSION: ${JAVA_VERSION}
+        KYUUBI_VERSION: ${KYUUBI_VERSION}
     user: root
     env_file:
       - .env

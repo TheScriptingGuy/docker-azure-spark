@@ -1,6 +1,6 @@
-#ARG PYTHON_VERSION
-#ARG JAVA_VERSION
-#FROM dependencies:latest AS dependencies
+# ARG PYTHON_VERSION
+# ARG JAVA_VERSION
+# FROM dependencies:latest AS dependencies
 ARG PYTHON_VERSION
 ARG JAVA_VERSION
 FROM eclipse-temurin:${JAVA_VERSION}-jre as java-jre
@@ -29,16 +29,9 @@ ARG HADOOP_VERSION
 ARG HIVE_VERSION
 ARG LIVY_VERSION
 ARG DERBY_VERSION
+ARG KYUUBI_VERSION
 
 COPY ./artifacts /tmp/
-
-# Copy individual tar archives into /tmp
-# COPY artifacts/python-packages.tar.gz /tmp/python-packages.tar.gz
-# COPY artifacts/bin.tar.gz /tmp/bin.tar.gz
-# COPY artifacts/livy.tar.gz /tmp/livy.tar.gz
-# COPY artifacts/share.tar.gz /tmp/share.tar.gz
-# COPY artifacts/include.tar.gz /tmp/include.tar.gz
-# COPY artifacts/java /tmp/java
 
 # Local Build steps to directly copy the tar archives, commented out by default because of disk size limit on github actions.
 #COPY --from=dependencies /artifacts /tmp
@@ -57,6 +50,7 @@ COPY --from=java-jre $JAVA_HOME $JAVA_HOME
 ENV SPARK_HOME="/opt/spark"
 ENV HIVE_HOME="/opt/hive"
 ENV HADOOP_HOME="/opt/hadoop"
+ENV KYUUBI_HOME="/opt/kyuubi"
 # Set environment variables
 ENV PYSPARK_PYTHON=/usr/local/bin/python${PYTHON_VERSION}
 ENV PYSPARK_DRIVER_PYTHON=/usr/local/bin/python${PYTHON_VERSION}
@@ -77,9 +71,8 @@ RUN wget --verbose "https://archive.apache.org/dist/spark/spark-$SPARK_VERSION/s
 ENV PATH="${SPARK_HOME}/bin/:${PATH}:${SPARK_HOME}/tmp/ivy2/jars" \
     SPARK_HOME="${SPARK_HOME}" \
     SPARK_CONF_DIR="${SPARK_HOME}/conf" \
-    SPARK_DIST_CLASSPATH="${SPARK_HOME}/jars/*" \
-    SPARK_EXTRA_CLASSPATH="$SPARK_CLASSPATH:${SPARK_HOME}/tmp/ivy2/jars/*" \
-    SPARK_CLASSPATH="$SPARK_CLASSPATH:$SPARK_EXTRA_CLASSPATH:$HADOOP_PREFIX/etc/hadoop" \
+    SPARK_EXTRA_CLASSPATH="${SPARK_HOME}/tmp/ivy2/jars/*" \
+    SPARK_CLASSPATH="${SPARK_HOME}/jars/*" \
     SPARK_PUBLIC_DNS=localhost
 
 # Fix Spark installation for Java 11 and Apache Arrow library
@@ -93,7 +86,7 @@ RUN cp -p "${SPARK_HOME}/conf/spark-defaults.conf.template" "${SPARK_HOME}/conf/
     echo 'spark.sql.extensions io.delta.sql.DeltaSparkSessionExtension' >> "${SPARK_HOME}/conf/spark-defaults.conf" &&\
     echo 'spark.hive.metastore.schema.verification false' >> "${SPARK_HOME}/conf/spark-defaults.conf" &&\
     echo 'hive.metastore.schema.verification false' >> "${SPARK_HOME}/conf/spark-defaults.conf" &&\
-    echo "spark.jars.ivy ${SPARK_HOME}/tmp/ivy2" >> "${SPARK_HOME}/conf/spark-defaults.conf" &&\
+    echo "spark.jars.ivy ${SPARK_HOME}/jars" >> "${SPARK_HOME}/conf/spark-defaults.conf" &&\
     echo "spark.sql.warehouse.dir /user/hive/warehouse" >> "${SPARK_HOME}/conf/spark-defaults.conf" &&\
     echo "spark.sql.catalogImplementation hive" >> "${SPARK_HOME}/conf/spark-defaults.conf" &&\
     echo "spark.sql.execution.arrow.pyspark.enabled true" >> "${SPARK_HOME}/conf/spark-defaults.conf" &&\
@@ -118,12 +111,14 @@ RUN if [ -n "$HIVE_VERSION" ]; then \
     fi
 
 # SET HIVE ENV VARIABLES
-ENV HIVE_HOME=/opt/hive
-ENV HIVE_CONF_DIR=$HIVE_HOME/conf
-ENV PATH=$HIVE_HOME/sbin:$HIVE_HOME/bin:$PATH
+ENV HIVE_HOME=/opt/hive \
+    HIVE_CONF_DIR=$HIVE_HOME/conf \
+    PATH=$HIVE_HOME/sbin:$HIVE_HOME/bin:$PATH \
+    HIVE_CLASSPATH=$HIVE_HOME/lib/*
+
 COPY hive/conf/ $HIVE_CONF_DIR/
 
-ENV SPARK_CLASSPATH="$SPARK_CLASSPATH:$HIVE_HOME/lib/"
+ENV SPARK_CLASSPATH="$SPARK_CLASSPATH"
 
 COPY hive/conf/ $SPARK_HOME/conf/
 
@@ -154,13 +149,7 @@ ENV HADOOP_COMMON_LIB_NATIVE_DIR=$HADOOP_HOME/lib/native \
     HADOOP_MAPRED_HOME=$HADOOP_HOME \
     HADOOP_YARN_HOME=$HADOOP_HOME \
     HADOOP_CONF_DIR=$HADOOP_HOME/etc/hadoop \
-    YARN_CONF_DIR=$HADOOP_PREFIX/etc/hadoop \
-    HADOOP_CLASSPATH="$HADOOP_HOME/share/hadoop/tools/lib/*"
-
-# Set SPARK CLASSPATH
-RUN echo 'export SPARK_DIST_CLASSPATH="$($HADOOP_HOME/bin/hadoop classpath:${SPARK_HOME}/tmp/ivy2)"' >> /etc/environment
-ENV SPARK_EXTRA_CLASSPATH="$SPARK_CLASSPATH:$${SPARK_HOME}/tmp/ivy2/jars/*"
-ENV SPARK_CLASSPATH="$SPARK_CLASSPATH:$HADOOP_CLASSPATH:$SPARK_EXTRA_CLASSPATH"
+    YARN_CONF_DIR=$HADOOP_PREFIX/etc/hadoop
 
 # Set Default Environment Variables in HADOOP ENV.sh
 RUN sed -i '/^export JAVA_HOME/ s:.*:export JAVA_HOME=/usr/java/default\nexport HADOOP_PREFIX=$HADOOP_HOME\nexport HADOOP_HOME=$HADOOP_HOME\n:' $HADOOP_PREFIX/etc/hadoop/hadoop-env.sh
@@ -215,24 +204,15 @@ RUN echo 'export JAVA_HOME=/opt/java/openjdk' >> ~/.bashrc && \
 # Set HADOOP_OPTS as an environment variable for immediate effect in Docker layers
 ENV HADOOP_OPTS="-Djava.library.path=$HADOOP_PREFIX/lib/native"
 
-RUN echo 'export SPARK_DIST_CLASSPATH="$($HADOOP_HOME/bin/hadoop classpath:${SPARK_HOME}/tmp/ivy2:$HIVE_HOME/lib classpath)"' >> /etc/environment
-
-RUN for f in ${SPARK_HOME}/jars/*.jar; do \
-        CLASSPATH=${CLASSPATH}:$f; \
-    done
-
-    
-ENV HADOOP_CLASSPATH="$HADOOP_CLASSPATH:$HIVE_HOME/lib/*"
-
-ENV SPARK_CLASSPATH="$SPARK_CLASSPATH:$HADOOP_CLASSPATH"
-
 ###########################################
 # Install Derby
 ###########################################
 
 #SET ENV Variables
 ENV DERBY_HOME=/opt/derby \
-    PATH=$PATH:$DERBY_HOME/bin
+    PATH=$PATH:$DERBY_HOME/bin \
+    DERBY_CLASSPATH=$DERBY_HOME/lib/* \
+    HADOOP_CLASSPATH="/opt/hadoop/etc/hadoop:/opt/hadoop/share/hadoop/common/lib/*:/opt/hadoop/share/hadoop/common/*:/opt/hadoop/share/hadoop/tools/lib/azure-data-lake-store-sdk-2.3.9.jar:/opt/hadoop/share/hadoop/tools/lib/wildfly-openssl-1.0.7.Final.jar:/opt/hadoop/share/hadoop/tools/lib/hadoop-azure-datalake-3.3.4.jar:/opt/hadoop/share/hadoop/hdfs:/opt/hadoop/share/hadoop/hdfs/lib/*:/opt/hadoop/share/hadoop/hdfs/*:/opt/hadoop/share/hadoop/mapreduce/*:/opt/hadoop/share/hadoop/yarn:/opt/hadoop/share/hadoop/yarn/lib/*:/opt/hadoop/share/hadoop/yarn/*"
 
 # Download and install Derby
 RUN wget --verbose "https://archive.apache.org/dist/db/derby/db-derby-$DERBY_VERSION/db-derby-$DERBY_VERSION-bin.tar.gz" -O /tmp/derby.tar.gz \
@@ -240,8 +220,29 @@ RUN wget --verbose "https://archive.apache.org/dist/db/derby/db-derby-$DERBY_VER
     && tar -xzf /tmp/derby.tar.gz -C "$DERBY_HOME" --strip-components=1 \
     && rm /tmp/derby.tar.gz
 
+###########################################
+# Install Kyuubi
+###########################################
 
-HEALTHCHECK CMD curl -f "http://host.docker.internal:${LIVY_PORT}/" || exit 1
+# Download and extract Kyuubi
+RUN wget "https://archive.apache.org/dist/kyuubi/kyuubi-$KYUUBI_VERSION/apache-kyuubi-$KYUUBI_VERSION-bin.tgz" && \
+    tar -xzf "apache-kyuubi-$KYUUBI_VERSION-bin.tgz" && \
+    mv "apache-kyuubi-$KYUUBI_VERSION-bin" "$KYUUBI_HOME" && \
+    rm "apache-kyuubi-$KYUUBI_VERSION-bin.tgz"
+
+# Create configuration directory and add kyuubi-defaults.conf
+RUN mkdir -p "$KYUUBI_HOME/conf" && \
+    echo "kyuubi.engine.type=spark" > ${KYUUBI_HOME}/conf/kyuubi-defaults.conf && \
+    echo "kyuubi.engine.spark.version=${SPARK_VERSION}" >> ${KYUUBI_HOME}/conf/kyuubi-defaults.conf && \
+    echo "kyuubi.engine.spark.home=${SPARK_HOME}" >> ${KYUUBI_HOME}/conf/kyuubi-defaults.conf && \
+    echo "kyuubi.frontend.bind.host=0.0.0.0" >> ${KYUUBI_HOME}/conf/kyuubi-defaults.conf && \
+    echo "kyuubi.frontend.thrift.binary.bind.host=0.0.0.0" >> ${KYUUBI_HOME}/conf/kyuubi-defaults.conf && \
+    echo "kyuubi.frontend.thrift.http.bind.host=0.0.0.0" >> ${KYUUBI_HOME}/conf/kyuubi-defaults.conf && \
+    echo "kyuubi.frontend.mysql.bind.host=0.0.0.0" >> ${KYUUBI_HOME}/conf/kyuubi-defaults.conf && \
+    echo "kyuubi.frontend.trino.bind.host=0.0.0.0" >> ${KYUUBI_HOME}/conf/kyuubi-defaults.conf && \
+    echo "kyuubi.frontend.rest.bind.host=0.0.0.0" >> ${KYUUBI_HOME}/conf/kyuubi-defaults.conf && \
+    echo "kyuubi.engine.type=SPARK_SQL" >> ${KYUUBI_HOME}/conf/kyuubi-defaults.conf
+
 
 ###########################################
 # Install Python & Spark dependencies
@@ -249,11 +250,6 @@ HEALTHCHECK CMD curl -f "http://host.docker.internal:${LIVY_PORT}/" || exit 1
 
 #Install Spark dependencies by running Spark once
 RUN python -c "from pyspark.sql import SparkSession; spark = SparkSession.builder.getOrCreate(); spark.stop()"  && python -m spylon_kernel install
-
-#ADD Spark IVY jars to the CLASSPATH
-RUN for f in ${SPARK_HOME}/tmp/ivy2/jars/*.jar; do \
-        CLASSPATH=${CLASSPATH}:$f; \
-    done
 
 COPY sparkmagic/example_config.json /home/root/.sparkmagic/config.json
 
@@ -290,8 +286,8 @@ EXPOSE 7077 8080 18080
 # Jupyter Notebook port
 EXPOSE 8888
 
-# Hive Metastore and HiveServer2 ports
-EXPOSE 9083 10000
+# Hive Metastore and `Kyuubi Thrift ports
+EXPOSE 9083 10009
 
 # MapReduce JobHistory Server ports
 EXPOSE 10020 19888
@@ -304,68 +300,29 @@ EXPOSE 8998
 
 USER root
 
-# Install Apache Tez
-RUN wget https://archive.apache.org/dist/tez/0.9.2/apache-tez-0.9.2-bin.tar.gz -O /tmp/apache-tez-0.9.2-bin.tar.gz && \
-    tar -xzf /tmp/apache-tez-0.9.2-bin.tar.gz -C /opt && \
-    mv /opt/apache-tez-0.9.2-bin /opt/tez && \
-    rm /tmp/apache-tez-0.9.2-bin.tar.gz && \
-    # Create the classpath for Tez
-    for jar in /opt/tez/*.jar; do \
-        CLASSPATH=$CLASSPATH:$jar; \
-    done && \
-    # Create the classpath for Spark
-    for jar in /opt/spark/jars/*.jar; do \
-        CLASSPATH=$CLASSPATH:$jar; \
-    done && \
-    # Create the classpath for Hive
-    for jar in /opt/hive/lib/*.jar; do \
-        CLASSPATH=$CLASSPATH:$jar; \
-    done && \
-    # Create the classpath for Hadoop Common
-    for jar in $HADOOP_HOME/share/hadoop/common/*.jar; do \
-        CLASSPATH=$CLASSPATH:$jar; \
-    done && \
-    for jar in $HADOOP_HOME/share/hadoop/common/lib/*.jar; do \
-        CLASSPATH=$CLASSPATH:$jar; \
-    done && \
-    # Create the classpath for Hadoop HDFS
-    for jar in $HADOOP_HOME/share/hadoop/hdfs/*.jar; do \
-        CLASSPATH=$CLASSPATH:$jar; \
-    done && \
-    for jar in $HADOOP_HOME/share/hadoop/hdfs/lib/*.jar; do \
-        CLASSPATH=$CLASSPATH:$jar; \
-    done && \
-    # Create the classpath for Hadoop MapReduce
-    for jar in $HADOOP_HOME/share/hadoop/mapreduce/*.jar; do \
-        CLASSPATH=$CLASSPATH:$jar; \
-    done && \
-    for jar in $HADOOP_HOME/share/hadoop/mapreduce/lib/*.jar; do \
-        CLASSPATH=$CLASSPATH:$jar; \
-    done && \
-    # Create the classpath for Hadoop YARN
-    for jar in $HADOOP_HOME/share/hadoop/yarn/*.jar; do \
-        CLASSPATH=$CLASSPATH:$jar; \
-    done && \
-    for jar in $HADOOP_HOME/share/hadoop/yarn/lib/*.jar; do \
-        CLASSPATH=$CLASSPATH:$jar; \
-    done && \
-    # Create the classpath for Derby
-    for jar in $DERBY_HOME/lib/*.jar; do \
-        CLASSPATH=$CLASSPATH:$jar; \
-    done
+# # Install Apache Tez
+# RUN wget https://archive.apache.org/dist/tez/0.9.2/apache-tez-0.9.2-bin.tar.gz -O /tmp/apache-tez-0.9.2-bin.tar.gz && \
+#     tar -xzf /tmp/apache-tez-0.9.2-bin.tar.gz -C /opt && \
+#     mv /opt/apache-tez-0.9.2-bin /opt/tez && \
+#     rm /tmp/apache-tez-0.9.2-bin.tar.gz
+
+# Source the environment file to make the variable available
+RUN set -a; source /etc/environment; set +a;
 
 ENV PATH=$PATH:$HADOOP_PREFIX/bin:$SPARK_HOME/bin:$HIVE_HOME/bin:$DERBY_HOME/bin:$JAVA_HOME/bin \
     YARN_RESOURCEMANAGER_USER=root \
     YARN_NODEMANAGER_USER=root \
     JUPYTER_PATH=/usr/local/share/jupyter/kernels \
-    CLASSPATH=$CLASSPATH \
-    HIVE_AUX_JARS_PATH=""
+    HIVE_AUX_JARS_PATH=$HIVE_CLASSPATH:/opt/spark/lib/*:$DERBY_CLASSPATH:$HADOOP_CLASSPATH \
+    SPARK_CLASSPATH=$SPARK_CLASSPATH:$HIVE_CLASSPATH \
+    HADOOP_CLASSPATH=$HADOOP_CLASSPATH \
+    SPARK_DIST_CLASSPATH=$HADOOP_CLASSPATH \
+    CLASSPATH=$SPARK_CLASSPATH:$HIVE_CLASSPATH:$HADOOP_CLASSPATH:$DERBY_CLASSPATH:$TEZ_CLASSPATH
 
 #Add Derby/Hive user
 RUN useradd -s /bin/bash -m APP && \
     echo "APP:mine" | sudo chpasswd && \
     getent group hdfs > /dev/null || groupadd hdfs
-
 
 RUN hdfs dfs -mkdir -p /user/hive/warehouse && \
     hdfs dfs -mkdir /user/root && \
