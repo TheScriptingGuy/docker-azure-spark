@@ -116,6 +116,9 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r docker/tests/requirements.txt
 
+      - name: Wait for 3 minutes
+        run: sleep 180
+
       - name: Run tests
         run: |
           pytest docker/tests
