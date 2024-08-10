@@ -97,6 +97,7 @@ jobs:
           LIVY_VERSION=${{ steps.dotenv.outputs.livy_version }}
           DERBY_VERSION=${{ steps.dotenv.outputs.derby_version }}
           JAVA_VERSION=${{ steps.dotenv.outputs.java_version }}
+          KYUUBI_VERSION=${{ steps.dotenv.outputs.kyuubi_version }}
           ARTIFACTS_PATH=./artifacts 
 
   validate:
