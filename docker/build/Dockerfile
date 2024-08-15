@@ -24,6 +24,7 @@ ENV LIVY_PORT=8998 \
     LIVY_CONF_DIR="${LIVY_HOME}/conf"
 
 ARG SPARK_VERSION
+ARG SCALA_VERSION
 ARG DELTA_VERSION
 ARG HADOOP_VERSION
 ARG HIVE_VERSION
@@ -34,7 +35,7 @@ ARG KYUUBI_VERSION
 COPY ./artifacts /tmp/
 
 # Local Build steps to directly copy the tar archives, commented out by default because of disk size limit on github actions.
-#COPY --from=dependencies /artifacts /tmp
+# COPY --from=dependencies /artifacts /tmp
 
 # Extract the tar archives
 RUN tar -xzf /tmp/python-packages.tar.gz -C /usr/local/lib/python${PYTHON_VERSION} && \
@@ -42,13 +43,6 @@ RUN tar -xzf /tmp/python-packages.tar.gz -C /usr/local/lib/python${PYTHON_VERSIO
     tar -xzf /tmp/livy.tar.gz -C /opt/ && \
     tar -xzf /tmp/share.tar.gz -C /usr/local/ && \
     tar -xzf /tmp/include.tar.gz -C /usr/local/
-
-# Conditionally remove Python 3.11 if PYTHON_VERSION is not 3.11
-RUN if [ "$PYTHON_VERSION" != "3.11" ]; then \
-    apt-get remove -y python3.11 python3.11-venv python3.11-dev; \
-    apt-get autoremove -y; \
-    apt-get clean; \
-    fi
 
 # Copy the Java Runtime Environment (JRE) from the eclipse-temurin image
 COPY --from=java-jre $JAVA_HOME $JAVA_HOME
@@ -70,9 +64,14 @@ RUN mkdir -p $SPARK_HOME && mkdir -p $HADOOP_HOME && mkdir -p $HIVE_HOME
 # # install spark
 # ############################################
 
-RUN wget --verbose "https://archive.apache.org/dist/spark/spark-$SPARK_VERSION/spark-$SPARK_VERSION-bin-hadoop$(echo $HADOOP_VERSION | cut -d '.' -f1).tgz" -O /tmp/spark.tgz && \
-        tar -xf /tmp/spark.tgz -C $SPARK_HOME --strip-components=1 && \
-        rm /tmp/spark.tgz; 
+# Conditional URL construction based on Scala and Spark versions
+RUN if [ "$SCALA_VERSION" = "2.13" ] && [ "$(printf '%s\n' "$SPARK_VERSION" "4.0.0" | sort -V | head -n1)" != "4.0.0" ]; then \
+        wget --verbose "https://archive.apache.org/dist/spark/spark-$SPARK_VERSION/spark-$SPARK_VERSION-bin-hadoop$(echo $HADOOP_VERSION | cut -d '.' -f1)-scala$SCALA_VERSION.tgz" -O /tmp/spark.tgz; \
+    else \
+        wget --verbose "https://archive.apache.org/dist/spark/spark-$SPARK_VERSION/spark-$SPARK_VERSION-bin-hadoop$(echo $HADOOP_VERSION | cut -d '.' -f1).tgz" -O /tmp/spark.tgz; \
+    fi && \
+    tar -xf /tmp/spark.tgz -C $SPARK_HOME --strip-components=1 && \
+    rm /tmp/spark.tgz;
 
 # SET SPARK ENV VARIABLES
 ENV PATH="${SPARK_HOME}/bin/:${PATH}:${SPARK_HOME}/tmp/ivy2/jars" \
@@ -101,11 +100,11 @@ RUN cp -p "${SPARK_HOME}/conf/spark-defaults.conf.template" "${SPARK_HOME}/conf/
 
 # Dynamically set delta package based on DELTA_VERSION
 RUN if [ "$(printf '3\n%s' "$DELTA_VERSION" | sort -V | head -n1)" = "3" ]; then \
-        DELTA_PACKAGE="io.delta:delta-spark_2.12:$DELTA_VERSION"; \
+        DELTA_PACKAGE="io.delta:delta-spark_${SCALA_VERSION}:$DELTA_VERSION"; \
     else \
-        DELTA_PACKAGE="io.delta:delta-core_2.12:$DELTA_VERSION"; \
+        DELTA_PACKAGE="io.delta:delta-core_${SCALA_VERSION}:$DELTA_VERSION"; \
     fi && \
-    echo "spark.jars.packages org.apache.spark:spark-hive_2.12:3.1.2,org.apache.hadoop:hadoop-azure-datalake:3.0.0-alpha1,com.microsoft.azure:azure-storage:8.6.3,$DELTA_PACKAGE,org.apache.hadoop:hadoop-azure:${HADOOP_VERSION},com.azure:azure-storage-blob:12.25.2" >> "${SPARK_HOME}/conf/spark-defaults.conf"
+    echo "spark.jars.packages org.apache.spark:spark-hive_${SCALA_VERSION}:${HIVE_VERSION},org.apache.hadoop:hadoop-azure-datalake:3.0.0-alpha1,com.microsoft.azure:azure-storage:8.6.3,$DELTA_PACKAGE,org.apache.hadoop:hadoop-azure:${HADOOP_VERSION},com.azure:azure-storage-blob:12.25.2" >> "${SPARK_HOME}/conf/spark-defaults.conf"
 
 ###########################################
 # Install Hive
@@ -270,6 +269,14 @@ RUN mkdir -p /home/root/.sparkmagic && \
     jupyter-kernelspec install ${KERNELS_LOCATION}/sparkrkernel && \
     jupyter serverextension enable --py sparkmagic
 
+# Conditionally remove Python 3.11 if PYTHON_VERSION is not 3.11
+RUN if [ "$PYTHON_VERSION" != "3.11" ]; then \
+    apt-get remove -y python3.11; \
+    apt-get autoremove -y; \
+    apt-get clean; \
+    fi
+
+
 ###########################################
 # Finalize
 ###########################################
@@ -306,12 +313,6 @@ EXPOSE 2122 49707
 EXPOSE 8998
 
 USER root
-
-# # Install Apache Tez
-# RUN wget https://archive.apache.org/dist/tez/0.9.2/apache-tez-0.9.2-bin.tar.gz -O /tmp/apache-tez-0.9.2-bin.tar.gz && \
-#     tar -xzf /tmp/apache-tez-0.9.2-bin.tar.gz -C /opt && \
-#     mv /opt/apache-tez-0.9.2-bin /opt/tez && \
-#     rm /tmp/apache-tez-0.9.2-bin.tar.gz
 
 # Source the environment file to make the variable available
 RUN set -a; source /etc/environment; set +a;
