@@ -92,6 +92,7 @@ jobs:
           PYTHON_VERSION=${{ steps.dotenv.outputs.python_version }}
           SPARK_VERSION=${{ steps.dotenv.outputs.spark_version }}
           DELTA_VERSION=${{ steps.dotenv.outputs.delta_version }}
+          SCALA_VERSION=${{ steps.dotenv.outputs.scala_version }}
           HADOOP_VERSION=${{ steps.dotenv.outputs.hadoop_version }}
           HIVE_VERSION=${{ steps.dotenv.outputs.hive_version }}
           LIVY_VERSION=${{ steps.dotenv.outputs.livy_version }}
