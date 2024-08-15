@@ -43,6 +43,13 @@ RUN tar -xzf /tmp/python-packages.tar.gz -C /usr/local/lib/python${PYTHON_VERSIO
     tar -xzf /tmp/share.tar.gz -C /usr/local/ && \
     tar -xzf /tmp/include.tar.gz -C /usr/local/
 
+# Conditionally remove Python 3.11 if PYTHON_VERSION is not 3.11
+RUN if [ "$PYTHON_VERSION" != "3.11" ]; then \
+    apt-get remove -y python3.11 python3.11-venv python3.11-dev; \
+    apt-get autoremove -y; \
+    apt-get clean; \
+    fi
+
 # Copy the Java Runtime Environment (JRE) from the eclipse-temurin image
 COPY --from=java-jre $JAVA_HOME $JAVA_HOME
 
