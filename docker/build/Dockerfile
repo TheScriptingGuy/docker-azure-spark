@@ -348,7 +348,11 @@ RUN hdfs dfs -mkdir -p /user/hive/warehouse && \
 # Make environment available to all users
 RUN sh -c 'grep -qxF "session required pam_env.so" /etc/pam.d/common-session || echo "session required pam_env.so" >> /etc/pam.d/common-session' && \
     sh -c 'grep -qxF "session required pam_env.so" /etc/pam.d/common-session-noninteractive || echo "session required pam_env.so" >> /etc/pam.d/common-session-noninteractive' && \
-    echo ". /etc/environment" >> /etc/profile
+    echo ". /etc/environment" >> /etc/profile && \
+    echo 'while IFS= read -r line; do if [[ ! "$line" =~ ^# && ! -z "$line" ]]; then export "$line"; fi; done < /etc/environment' >> /etc/profile && \
+    echo 'while IFS= read -r line; do if [[ ! "$line" =~ ^# && ! -z "$line" ]]; then export "$line"; fi; done < /etc/environment' >> /etc/bash.bashrc
+
+    
 # Clean up temporary files
 RUN rm -rf /tmp/*
 
