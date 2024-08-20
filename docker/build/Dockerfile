@@ -1,6 +1,6 @@
-ARG PYTHON_VERSION
-ARG JAVA_VERSION
-FROM dependencies:latest AS dependencies
+# ARG PYTHON_VERSION
+# ARG JAVA_VERSION
+# FROM dependencies:latest AS dependencies
 ARG PYTHON_VERSION
 ARG JAVA_VERSION
 FROM eclipse-temurin:${JAVA_VERSION}-jre as java-jre
@@ -35,7 +35,7 @@ ARG KYUUBI_VERSION
 COPY ./artifacts /tmp/
 
 # Local Build steps to directly copy the tar archives, commented out by default because of disk size limit on github actions.
-COPY --from=dependencies /artifacts /tmp
+# COPY --from=dependencies /artifacts /tmp
 
 # Extract the tar archives
 RUN tar -xzf /tmp/python-packages.tar.gz -C /usr/local/lib/python${PYTHON_VERSION} && \
