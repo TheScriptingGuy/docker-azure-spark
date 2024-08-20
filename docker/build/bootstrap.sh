@@ -20,6 +20,7 @@ bash $HADOOP_PREFIX/etc/hadoop/yarn-env.sh
 bash $HADOOP_PREFIX/etc/hadoop/mapred-env.sh
 bash $SPARK_HOME/conf/spark-env.sh
 echo $HADOOP_OPTS
+while IFS= read -r line; do if [[ ! \"\$line\" =~ ^# && ! -z \"\$line\" ]]; then export \"\$line\"; fi; done < /etc/environment
 
 nohup jupyter notebook --allow-root --NotebookApp.allow_origin='*' --NotebookApp.password='' --NotebookApp.token='' &
 
@@ -48,7 +49,7 @@ echo $AZURE_STORAGE_ACCOUNTS | jq -c '.[]' | while read i; do \
         $HADOOP_HOME/etc/hadoop/core-site.xml; \
     done
 
-$DERBY_HOME/bin/startNetworkServer > /home/root/derby-server.log &
+bash -c "$DERBY_HOME/bin/startNetworkServer &"
 
 export YARN_CONF_DIR=$HADOOP_PREFIX/etc
 
@@ -62,7 +63,7 @@ if [ ! -f "$NAMEDIR"/initialized ]; then
 fi
 
 echo "Starting Hive Metastore..."
-/opt/hive/bin/hive --service metastore --hiveconf hive.root.logger=INFO,console > /opt/hive/logs/metastore.log 2>&1 &
+/opt/hive/bin/hive --service metastore --hiveconf hive.root.logger=INFO,console > /opt/hive/metastore.log 2>&1 &
 
 $LIVY_HOME/bin/livy-server &
 
