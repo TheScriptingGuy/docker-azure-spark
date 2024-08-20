@@ -49,18 +49,15 @@ echo $AZURE_STORAGE_ACCOUNTS | jq -c '.[]' | while read i; do \
         $HADOOP_HOME/etc/hadoop/core-site.xml; \
     done
 
-bash -c "$DERBY_HOME/bin/startNetworkServer &"
-
+java -Dderby.drda.host=0.0.0.0 -jar $DERBY_HOME/lib/derbyrun.jar server start > ~/derby_server.log 2>&1 &
 export YARN_CONF_DIR=$HADOOP_PREFIX/etc
 
 mkdir -p /tmp/spark/data
 mkdir -p /tmp/hadoop/hdfs/tmp
 
-if [ ! -f "$NAMEDIR"/initialized ]; then
-  echo "Configuring Hive..."
-  schematool -dbType derby -initSchema
-  touch "$NAMEDIR"/initialized
-fi
+echo "Configuring Hive..."
+schematool -dbType derby -initSchema
+
 
 echo "Starting Hive Metastore..."
 /opt/hive/bin/hive --service metastore --hiveconf hive.root.logger=INFO,console > /opt/hive/metastore.log 2>&1 &

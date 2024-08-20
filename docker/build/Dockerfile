@@ -339,6 +339,8 @@ RUN hdfs dfs -mkdir -p /user/hive/warehouse && \
     chmod -R 777 /opt/hive && \
     chmod -R 777 /opt/spark && \
     chmod -R 777 /opt/hadoop && \
+    chmod -R 777 /opt/kyuubi && \
+    chmod -R 777 /opt/livy && \
     chmod -R 777 /tmp && \
     chmod -R 777 /user/hive && \
     chmod -R 777 /opt/derby && \
