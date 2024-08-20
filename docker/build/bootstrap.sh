@@ -20,8 +20,6 @@ bash $HADOOP_PREFIX/etc/hadoop/yarn-env.sh
 bash $HADOOP_PREFIX/etc/hadoop/mapred-env.sh
 bash $SPARK_HOME/conf/spark-env.sh
 echo $HADOOP_OPTS
-# Source the environment file to make the variable available
-RUN set -a; source /etc/environment; set +a;
 
 nohup jupyter notebook --allow-root --NotebookApp.allow_origin='*' --NotebookApp.password='' --NotebookApp.token='' &
 

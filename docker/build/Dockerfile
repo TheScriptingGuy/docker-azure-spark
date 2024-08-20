@@ -1,6 +1,6 @@
-# ARG PYTHON_VERSION
-# ARG JAVA_VERSION
-# FROM dependencies:latest AS dependencies
+ARG PYTHON_VERSION
+ARG JAVA_VERSION
+FROM dependencies:latest AS dependencies
 ARG PYTHON_VERSION
 ARG JAVA_VERSION
 FROM eclipse-temurin:${JAVA_VERSION}-jre as java-jre
@@ -35,7 +35,7 @@ ARG KYUUBI_VERSION
 COPY ./artifacts /tmp/
 
 # Local Build steps to directly copy the tar archives, commented out by default because of disk size limit on github actions.
-# COPY --from=dependencies /artifacts /tmp
+COPY --from=dependencies /artifacts /tmp
 
 # Extract the tar archives
 RUN tar -xzf /tmp/python-packages.tar.gz -C /usr/local/lib/python${PYTHON_VERSION} && \
@@ -347,7 +347,8 @@ RUN hdfs dfs -mkdir -p /user/hive/warehouse && \
 
 # Make environment available to all users
 RUN sh -c 'grep -qxF "session required pam_env.so" /etc/pam.d/common-session || echo "session required pam_env.so" >> /etc/pam.d/common-session' && \
-    sh -c 'grep -qxF "session required pam_env.so" /etc/pam.d/common-session-noninteractive || echo "session required pam_env.so" >> /etc/pam.d/common-session-noninteractive'
+    sh -c 'grep -qxF "session required pam_env.so" /etc/pam.d/common-session-noninteractive || echo "session required pam_env.so" >> /etc/pam.d/common-session-noninteractive' && \
+    echo ". /etc/environment" >> /etc/profile
 # Clean up temporary files
 RUN rm -rf /tmp/*
 
