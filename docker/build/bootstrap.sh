@@ -20,7 +20,7 @@ bash $HADOOP_PREFIX/etc/hadoop/yarn-env.sh
 bash $HADOOP_PREFIX/etc/hadoop/mapred-env.sh
 bash $SPARK_HOME/conf/spark-env.sh
 echo $HADOOP_OPTS
-while IFS= read -r line; do if [[ ! \"\$line\" =~ ^# && ! -z \"\$line\" ]]; then export \"\$line\"; fi; done < /etc/environment
+while IFS= read -r line; do if [[ ! "$line" =~ ^# && ! -z "$line" ]]; then export "$line"; fi; done < /etc/environment | sed "s/\"//g"
 
 nohup jupyter notebook --allow-root --NotebookApp.allow_origin='*' --NotebookApp.password='' --NotebookApp.token='' &
 
